@@ -1,0 +1,7 @@
+STACK
+
+FRONTEND: REACT
+BACKEND: GOLANG
+DB: SQLITE
+
+DB DIAGRAM: https://dbdiagram.io/d/Bugly-6957e52c39fa3db27bf936b4
