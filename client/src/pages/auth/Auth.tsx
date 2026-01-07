@@ -1,9 +1,7 @@
-function Auth() {
+export function Auth() {
   return (
     <>
-      <h1>Vite + React</h1>
+      <h1>Auth.tsx</h1>
     </>
   );
 }
-
-export default Auth;
