@@ -1,10 +1,10 @@
-import { Stack } from "@chakra-ui/react";
+import { Stack, Text } from "@chakra-ui/react";
 
 export function Account() {
   return (
     <>
       <Stack>
-        <h1>Account.tsx</h1>
+        <Text>Account.tsx</Text>
       </Stack>
     </>
   );
