@@ -8,7 +8,7 @@ Bugly is a high-performance system designed for internal teams to manage and del
 
 ### The Stack
 
-- **Frontend**: React • ChakraUI • TanStack Query • Tailwind.css
+- **Frontend**: React • ChakraUI • TanStack Query • Tailwind.css • React-Router-Dom
 - **Backend**: Go • GORM • JWT
 - **Database**: SQLite
 - **Deployment**: Docker • Hetzner • GitHub Actions
