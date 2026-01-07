@@ -1,9 +1,11 @@
-function Account() {
+import { Stack } from "@chakra-ui/react";
+
+export function Account() {
   return (
     <>
-      <h1>Account.tsx</h1>
+      <Stack>
+        <h1>Account.tsx</h1>
+      </Stack>
     </>
   );
 }
-
-export default Account;
