@@ -18,7 +18,7 @@ export function Auth() {
           <Stack gap="2" textAlign="center">
             <Heading
               size="6xl"
-              fontWeight="semibold"
+              fontFamily={"archivo black"}
               letterSpacing="tight"
               color={{ _light: "gray.900", _dark: "white" }}
             >
