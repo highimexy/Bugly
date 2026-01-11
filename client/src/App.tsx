@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Auth } from "./pages/auth/Auth";
 import { Home } from "./pages/Home";
-
+import { ProtectedRoute } from "./components/ui/ProtectedRoute"; // Import strażnika
 import { Box } from "@chakra-ui/react";
 import { ToggleColorMode } from "./components/ui/ToggleColorMode";
 
@@ -14,7 +14,10 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/auth" replace />} />
         <Route path="/auth" element={<Auth />} />
-        <Route path="/home" element={<Home />} />
+
+        <Route element={<ProtectedRoute />}>
+          <Route path="/home" element={<Home />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   );

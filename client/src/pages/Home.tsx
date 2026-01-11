@@ -10,8 +10,19 @@ import {
   Heading,
 } from "@chakra-ui/react";
 import { LuSettings, LuPlus, LuFolder, LuLogOut } from "react-icons/lu";
+import { useNavigate } from "react-router-dom";
 
 export function Home() {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    // 1. Usuwamy token z pamięci przeglądarki
+    localStorage.removeItem("token");
+
+    // 2. Przekierowujemy do strony logowania
+    navigate("/auth");
+  };
+
   return (
     <Flex minH="100vh" bg="mainBg">
       {/* SIDE PANEL */}
@@ -89,7 +100,12 @@ export function Home() {
               </Text>
             </Box>
           </Flex>
-          <NavItem icon={<LuLogOut />} label="Log out" color="red.500" />
+          <NavItem
+            icon={<LuLogOut />}
+            label="Log out"
+            color="red.500"
+            onClick={handleLogout}
+          />
         </Stack>
       </Box>
 
@@ -102,7 +118,7 @@ export function Home() {
                 Projects
               </Heading>
               <Text color="gray.500" fontSize="sm">
-                Create and menage projects
+                Create and manage projects
               </Text>
             </Box>
           </Flex>
@@ -139,11 +155,13 @@ function NavItem({
   label,
   active,
   color,
+  onClick,
 }: {
   icon: React.ReactNode;
   label: string;
   active?: boolean;
   color?: string;
+  onClick?: () => void;
 }) {
   return (
     <Link
@@ -153,6 +171,8 @@ function NavItem({
       px="3"
       py="2"
       borderRadius="xl"
+      cursor="pointer"
+      onClick={onClick}
       bg={active ? { _light: "gray.100", _dark: "gray.800" } : "transparent"}
       color={
         color || {

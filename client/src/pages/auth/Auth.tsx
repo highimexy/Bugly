@@ -1,32 +1,47 @@
-import {
-  Box,
-  Button,
-  Center,
-  Heading,
-  Input,
-  Stack,
-  Text,
-} from "@chakra-ui/react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
+import { Box, Button, Center, Heading, Input, Stack } from "@chakra-ui/react";
 import { Field } from "@/components/ui/field";
 
 export function Auth() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+
+  const loginMutation = useMutation({
+    mutationFn: async () => {
+      const response = await axios.post("http://localhost:8080/api/login", {
+        email,
+        password,
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      localStorage.setItem("token", data.token);
+      navigate("/home");
+    },
+    onError: (error: any) => {
+      // Tutaj możesz dodać powiadomienie o błędzie (Toast)
+      alert(error.response?.data?.error || "Błąd połączenia z serwerem");
+    },
+  });
+
   return (
     <Box minH="100vh" bg="mainBg" display="flex" flexDirection="column">
       <Center flex="1" p={4}>
         <Stack gap="8" width="full" maxW="400px">
-          {/* Logo */}
           <Stack gap="2" textAlign="center">
             <Heading
               size="6xl"
               fontFamily={"archivo black"}
               letterSpacing="tight"
-              color={{ _light: "gray.900", _dark: "white" }}
             >
               Bugly
             </Heading>
           </Stack>
 
-          {/* Karta Logowania */}
           <Box
             bg={{ _light: "white", _dark: "gray.800" }}
             p={{ base: "6", md: "10" }}
@@ -38,6 +53,8 @@ export function Auth() {
             <Stack gap="6">
               <Field label="Email">
                 <Input
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
                   variant="subtle"
                   size="lg"
@@ -48,6 +65,8 @@ export function Auth() {
               <Field label="Hasło">
                 <Input
                   type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   variant="subtle"
                   size="lg"
@@ -56,6 +75,8 @@ export function Auth() {
               </Field>
 
               <Button
+                onClick={() => loginMutation.mutate()}
+                loading={loginMutation.isPending} // Chakra UI v3 obsłuży spinner
                 bg="black"
                 color="white"
                 _hover={{ bg: "gray.800" }}
@@ -75,13 +96,6 @@ export function Auth() {
           </Box>
         </Stack>
       </Center>
-
-      {/* Footer */}
-      <Box p="6" textAlign="center">
-        <Text fontSize="xs" color="gray.400">
-          © 2026 Bugly Inc.
-        </Text>
-      </Box>
     </Box>
   );
 }
