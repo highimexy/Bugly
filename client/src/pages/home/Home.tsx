@@ -35,7 +35,9 @@ export function Home() {
           zIndex: 0, // Kładzie tło pod spód
         }}
       >
-        <Text color="gray.400">NO PROJECTS?</Text>
+        <Text textStyle="4xl" color="gray.400">
+          NO PROJECTS?
+        </Text>
         <Button
           onClick={() => navigate("/create-project")}
           bg="black"
@@ -46,7 +48,7 @@ export function Home() {
           fontWeight="medium"
           borderRadius="xl"
         >
-          Create Project <LuPlus style={{ marginLeft: "8px" }} />
+          Create First Project <LuPlus style={{ marginLeft: "8px" }} />
         </Button>
       </Stack>
     );
