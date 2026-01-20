@@ -2,6 +2,8 @@ import { Stack, Text, Button, SimpleGrid, Circle, Box } from "@chakra-ui/react";
 import { LuPlus } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
 import { useProjects } from "../../context/ProjectContext";
+// Import obrazka
+import noProjectsImg from "/empty-state/no-projects.webp";
 
 export function Home() {
   const navigate = useNavigate();
@@ -15,16 +17,36 @@ export function Home() {
         justify="center"
         align="center"
         textAlign="center"
+        borderRadius="2xl"
+        position="relative" // Konieczne dla pozycjonowania tła pod spodem
+        overflow="hidden" // Aby tło nie wystawało poza zaokrąglone rogi
+        _before={{
+          content: '""',
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          bgImage: `url(${noProjectsImg})`,
+          bgSize: "cover",
+          // EFEKTY:
+          filter: "grayscale(100%)", // Robi zdjęcie czarno-białym
+          opacity: "0.2", // Zmniejsza widoczność zdjęcia (np. do 20%)
+          zIndex: 0, // Kładzie tło pod spód
+        }}
       >
-        <Text color="gray.400">Here will be your projects</Text>
+        <Text color="gray.400">NO PROJECTS?</Text>
         <Button
+          onClick={() => navigate("/create-project")}
           bg="black"
           color="white"
-          _dark={{ bg: "white", color: "black" }}
+          _hover={{ bg: "gray.800" }}
+          _dark={{ bg: "white", color: "black", _hover: { bg: "gray.200" } }}
+          h="12"
+          fontWeight="medium"
           borderRadius="xl"
-          onClick={() => navigate("/create-project")}
         >
-          Create Project <LuPlus />
+          Create Project <LuPlus style={{ marginLeft: "8px" }} />
         </Button>
       </Stack>
     );
