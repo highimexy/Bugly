@@ -10,6 +10,7 @@ import {
 } from "@chakra-ui/react";
 import { LuCheck } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
+import { useProjects } from "../../context/ProjectContext.tsx";
 
 const COLORS = [
   "blue.400",
@@ -22,8 +23,14 @@ const COLORS = [
 
 export function CreateProject() {
   const navigate = useNavigate();
+  const { addProject } = useProjects();
   const [name, setName] = useState("");
   const [selectedColor, setSelectedColor] = useState(COLORS[0]);
+
+  const handleSave = () => {
+    addProject(name, selectedColor); // Zapisz projekt
+    navigate("/home");
+  };
 
   return (
     // Ustawiamy Flex na pełną wysokość i szerokość rodzica (ramki)
@@ -85,6 +92,7 @@ export function CreateProject() {
           h="12"
           borderRadius="xl"
           onClick={() => {
+            handleSave();
             console.log("Saving project:", { name, color: selectedColor });
             navigate("/home");
           }}

@@ -4,18 +4,18 @@ import {
   Stack,
   Text,
   Link,
-  Circle,
   Spacer,
   Heading,
 } from "@chakra-ui/react";
 import { LuSettings, LuPlus, LuFolder, LuLogOut } from "react-icons/lu";
 import { useNavigate, Outlet, useLocation } from "react-router-dom";
+import { useProjects } from "../../context/ProjectContext";
 
 export function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { projects } = useProjects(); // Pobieranie projektów z kontekstu
 
-  // Dynamiczne nagłówki zależne od ścieżki
   const getPageHeader = () => {
     switch (location.pathname) {
       case "/create-project":
@@ -28,14 +28,8 @@ export function DashboardLayout() {
 
   const { title, subtitle } = getPageHeader();
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/auth");
-  };
-
   return (
     <Flex minH="100vh" bg="mainBg">
-      {/* SIDE PANEL */}
       <Box
         as="nav"
         width="280px"
@@ -50,11 +44,7 @@ export function DashboardLayout() {
         h="100vh"
       >
         <Flex justify="center" mb="6">
-          <Text
-            fontFamily={"archivo black"}
-            fontSize="6xl"
-            letterSpacing="tight"
-          >
+          <Text fontFamily={"archivo black"} fontSize="4xl">
             Bugly
           </Text>
         </Flex>
@@ -86,47 +76,28 @@ export function DashboardLayout() {
             />
           </Flex>
           <Stack gap="1">
-            <ProjectLink label="E-commerce App" color="blue.400" />
-            <ProjectLink label="Marketing Site" color="purple.400" />
+            {/* Dynamiczne mapowanie projektów */}
+            {projects.map((project) => (
+              <ProjectLink
+                key={project.id}
+                label={project.name}
+                color={project.color}
+              />
+            ))}
           </Stack>
         </Box>
 
         <Spacer />
-
-        <Stack
-          gap="4"
-          pt="6"
-          borderTopWidth="1px"
-          borderColor={{ _light: "gray.50", _dark: "gray.800" }}
-        >
-          <Flex align="center" gap="3" px="3">
-            <Circle size="8" bg="gray.100" _dark={{ bg: "gray.700" }}>
-              <Text fontSize="xs" fontWeight="bold">
-                U
-              </Text>
-            </Circle>
-            <Box overflow="hidden">
-              <Text fontSize="sm" fontWeight="medium">
-                User
-              </Text>
-              <Text fontSize="xs" color="gray.500">
-                User@email.com
-              </Text>
-            </Box>
-          </Flex>
-          <NavItem
-            icon={<LuLogOut />}
-            label="Log out"
-            color="red.500"
-            onClick={handleLogout}
-          />
-        </Stack>
+        <NavItem
+          icon={<LuLogOut />}
+          label="Log out"
+          color="red.500"
+          onClick={() => navigate("/auth")}
+        />
       </Box>
 
-      {/* MAIN CONTENT AREA */}
       <Box flex="1" p="10" display="flex" flexDirection="column" h="100vh">
         <Stack gap="6" flex="1">
-          {/* Tytuł i opis ZAWSZE nad boxem */}
           <Box>
             <Heading size="3xl" fontWeight="semibold">
               {title}
@@ -135,8 +106,6 @@ export function DashboardLayout() {
               {subtitle}
             </Text>
           </Box>
-
-          {/* STAŁY BOX (Dashed) */}
           <Box
             flex="1"
             borderRadius="2xl"
@@ -147,7 +116,7 @@ export function DashboardLayout() {
             flexDirection="column"
             p="10"
           >
-            <Outlet /> {/* Tutaj wpada Home lub CreateProject */}
+            <Outlet />
           </Box>
         </Stack>
       </Box>
@@ -155,7 +124,6 @@ export function DashboardLayout() {
   );
 }
 
-// Komponenty pomocnicze
 function NavItem({ icon, label, active, color, onClick }: any) {
   return (
     <Link
@@ -167,6 +135,7 @@ function NavItem({ icon, label, active, color, onClick }: any) {
       borderRadius="xl"
       cursor="pointer"
       onClick={onClick}
+      transition="all 0.2s ease-in-out"
       bg={active ? { _light: "gray.100", _dark: "gray.800" } : "transparent"}
       color={
         color || {
@@ -174,14 +143,15 @@ function NavItem({ icon, label, active, color, onClick }: any) {
           _dark: active ? "white" : "gray.400",
         }
       }
-      fontWeight={active ? "semibold" : "medium"}
       _hover={{
         bg: { _light: "gray.50", _dark: "gray.800" },
         textDecoration: "none",
       }}
     >
       {icon}
-      <Text fontSize="sm">{label}</Text>
+      <Text fontSize="sm" fontWeight={active ? "semibold" : "medium"}>
+        {label}
+      </Text>
     </Link>
   );
 }
@@ -197,6 +167,7 @@ function ProjectLink({ label, color }: any) {
       borderRadius="lg"
       fontSize="sm"
       color="gray.500"
+      transition="all 0.2s ease-in-out"
       _hover={{
         color: "black",
         bg: "gray.50",
