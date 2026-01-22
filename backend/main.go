@@ -25,6 +25,8 @@ func main() {
 	// 3. Konfiguracja routera Gin
 	r := gin.Default()
 
+	r.SetTrustedProxies(nil)
+
 	// 4. KONFIGURACJA CORS (Bardzo ważne dla Reacta!)
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:5173"}, 
@@ -41,6 +43,6 @@ func main() {
 	}
 
 	// 6. Uruchomienie serwera
-	log.Println("Serwer Bugly działa na porcie :8080")
-	r.Run(":8080")
+	log.Println("Serwer Bugly działa na porcie :8081")
+	r.Run(":8081")
 }

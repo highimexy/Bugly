@@ -12,7 +12,7 @@ export function Auth() {
 
   const loginMutation = useMutation({
     mutationFn: async () => {
-      const response = await axios.post("http://localhost:8080/api/login", {
+      const response = await axios.post("http://localhost:8081/api/login", {
         email,
         password,
       });
