@@ -9,6 +9,7 @@ interface Project {
 interface ProjectContextType {
   projects: Project[];
   addProject: (name: string, color: string) => void;
+  deleteProject: (id: string) => void;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
@@ -21,8 +22,12 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     setProjects((prev) => [...prev, newProject]);
   };
 
+  const deleteProject = (id: string) => {
+    setProjects((prev) => prev.filter((project) => project.id !== id));
+  };
+
   return (
-    <ProjectContext.Provider value={{ projects, addProject }}>
+    <ProjectContext.Provider value={{ projects, addProject, deleteProject }}>
       {children}
     </ProjectContext.Provider>
   );
