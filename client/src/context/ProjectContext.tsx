@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  type ReactNode,
+} from "react";
 
 export interface Bug {
   id: string;
@@ -13,51 +19,124 @@ interface Project {
   id: string;
   name: string;
   color: string;
+  bugs?: Bug[]; // Backend zwraca błędy wewnątrz obiektu projektu (Preload)
 }
 
 interface ProjectContextType {
   projects: Project[];
-  bugs: Bug[]; // Nowa tablica błędów
-  addProject: (name: string, color: string) => void;
-  deleteProject: (id: string) => void;
-  addBug: (projectId: string, title: string, priority: Bug["priority"]) => void; // Funkcja dodawania błędu
+  bugs: Bug[];
+  addProject: (name: string, color: string) => Promise<void>;
+  deleteProject: (id: string) => Promise<void>;
+  addBug: (
+    projectId: string,
+    title: string,
+    priority: Bug["priority"],
+  ) => Promise<void>;
+  isLoading: boolean;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 
+const API_URL = "http://localhost:8081/api"; // Twój nowy port w Go
+
 export function ProjectProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [bugs, setBugs] = useState<Bug[]>([]); // Stan dla błędów
+  const [bugs, setBugs] = useState<Bug[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const addProject = (name: string, color: string) => {
-    const newProject = { id: Date.now().toString(), name, color };
-    setProjects((prev) => [...prev, newProject]);
+  // 1. POBIERANIE DANYCH Z BACKENDU
+  const fetchAllData = async () => {
+    try {
+      const response = await fetch(`${API_URL}/projects`);
+      const data: Project[] = await response.json();
+
+      setProjects(data);
+
+      // Wyciągamy błędy ze wszystkich projektów do jednej płaskiej tablicy dla wygody interfejsu
+      const allBugs = data.flatMap((p) => p.bugs || []);
+      setBugs(allBugs);
+    } catch (error) {
+      console.error("Błąd pobierania danych:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const deleteProject = (id: string) => {
-    setProjects((prev) => prev.filter((p) => p.id !== id));
-    setBugs((prev) => prev.filter((b) => b.projectId !== id)); // Usuń też błędy tego projektu
+  useEffect(() => {
+    fetchAllData();
+  }, []);
+
+  // 2. DODAWANIE PROJEKTU
+  const addProject = async (name: string, color: string) => {
+    const newProject = {
+      id: Date.now().toString(), // W Go ID to string
+      name,
+      color,
+    };
+
+    try {
+      const response = await fetch(`${API_URL}/projects`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newProject),
+      });
+
+      if (response.ok) {
+        await fetchAllData(); // Odświeżamy listę po sukcesie
+      }
+    } catch (error) {
+      console.error("Błąd dodawania projektu:", error);
+    }
   };
 
-  const addBug = (
+  // 3. USUWANIE PROJEKTU
+  const deleteProject = async (id: string) => {
+    try {
+      const response = await fetch(`${API_URL}/projects/${id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        setProjects((prev) => prev.filter((p) => p.id !== id));
+        setBugs((prev) => prev.filter((b) => b.projectId !== id));
+      }
+    } catch (error) {
+      console.error("Błąd usuwania projektu:", error);
+    }
+  };
+
+  // 4. DODAWANIE BŁĘDU
+  const addBug = async (
     projectId: string,
     title: string,
     priority: Bug["priority"],
   ) => {
-    const newBug: Bug = {
+    const newBug = {
       id: `BUG-${Math.floor(Math.random() * 1000)}`,
       projectId,
       title,
       priority,
       status: "Open",
-      createdAt: new Date().toLocaleDateString(),
     };
-    setBugs((prev) => [newBug, ...prev]);
+
+    try {
+      const response = await fetch(`${API_URL}/bugs`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newBug),
+      });
+
+      if (response.ok) {
+        await fetchAllData();
+      }
+    } catch (error) {
+      console.error("Błąd dodawania błędu:", error);
+    }
   };
 
   return (
     <ProjectContext.Provider
-      value={{ projects, bugs, addProject, deleteProject, addBug }}
+      value={{ projects, bugs, addProject, deleteProject, addBug, isLoading }}
     >
       {children}
     </ProjectContext.Provider>

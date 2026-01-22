@@ -19,17 +19,23 @@ func main() {
 		log.Fatal("Nie udało się połączyć z bazą danych:", err)
 	}
 
-	// 2. Automatyczna migracja (tworzenie tabel na podstawie modeli)
-	db.AutoMigrate(&models.User{})
+	// --- DODANO: WŁĄCZENIE OBSŁUGI KLUCZY OBCYCH DLA SQLITE ---
+	// SQLite domyślnie ignoruje powiązania między tabelami. 
+	// Ta linia sprawia, że baza sama pilnuje porządku w danych.
+	sqlDB, _ := db.DB()
+	sqlDB.Exec("PRAGMA foreign_keys = ON;")
+	// ---------------------------------------------------------
+
+	// 2. Automatyczna migracja
+	db.AutoMigrate(&models.User{}, &models.Project{}, &models.Bug{})
 
 	// 3. Konfiguracja routera Gin
 	r := gin.Default()
-
 	r.SetTrustedProxies(nil)
 
-	// 4. KONFIGURACJA CORS (Bardzo ważne dla Reacta!)
+	// 4. KONFIGURACJA CORS
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173"}, 
+		AllowOrigins:     []string{"http://localhost:5173"},
 		AllowMethods:     []string{"POST", "GET", "OPTIONS", "PUT", "DELETE"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		AllowCredentials: true,
@@ -38,8 +44,15 @@ func main() {
 	// 5. Definicja tras (Routes)
 	api := r.Group("/api")
 	{
-		// Przekazujemy instancję bazy danych do handlera
 		api.POST("/login", handlers.Login(db))
+
+		// PROJEKTY
+		api.GET("/projects", handlers.GetProjects(db))
+		api.POST("/projects", handlers.CreateProject(db))
+		api.DELETE("/projects/:id", handlers.DeleteProject(db))
+
+		// BŁĘDY
+		api.POST("/bugs", handlers.CreateBug(db))
 	}
 
 	// 6. Uruchomienie serwera

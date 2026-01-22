@@ -2,10 +2,8 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Box,
-  Heading,
   Text,
   Button,
-  Circle,
   Stack,
   Input,
   Flex,
