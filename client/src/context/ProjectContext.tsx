@@ -25,7 +25,7 @@ interface Project {
 interface ProjectContextType {
   projects: Project[];
   bugs: Bug[];
-  addProject: (name: string, color: string) => Promise<void>;
+  addProject: (name: string, color: string) => Promise<string | undefined>;
   deleteProject: (id: string) => Promise<void>;
   addBug: (
     projectId: string,
@@ -69,7 +69,8 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   // 2. DODAWANIE PROJEKTU
   const addProject = async (name: string, color: string) => {
     const newProject = {
-      id: Date.now().toString(), // W Go ID to string
+      // ID zostanie nadane przez backend lub zostawiamy to co masz
+      id: Date.now().toString(),
       name,
       color,
     };
@@ -82,7 +83,9 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       });
 
       if (response.ok) {
-        await fetchAllData(); // Odświeżamy listę po sukcesie
+        const savedProject = await response.json();
+        await fetchAllData(); // Odświeżamy listę
+        return savedProject.id; // Zwracamy ID otrzymane z backendu
       }
     } catch (error) {
       console.error("Błąd dodawania projektu:", error);

@@ -26,25 +26,40 @@ export function CreateProject() {
   const { addProject } = useProjects();
   const [name, setName] = useState("");
   const [selectedColor, setSelectedColor] = useState(COLORS[0]);
+  const [isSubmitting, setIsSubmitting] = useState(false); // Stan ładowania
 
-  const handleSave = () => {
-    addProject(name, selectedColor); // Zapisz projekt
-    navigate("/home");
+  const handleSave = async () => {
+    if (!name) return;
+
+    setIsSubmitting(true);
+    try {
+      // Czekamy na ID z backendu
+      const newProjectId = await addProject(name, selectedColor);
+
+      if (newProjectId) {
+        // Przenosimy do nowo stworzonego projektu
+        navigate(`/project/${newProjectId}`);
+      } else {
+        // Fallback do listy głównej
+        navigate("/home");
+      }
+    } catch (error) {
+      console.error("Failed to create project:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    // Ustawiamy Flex na pełną wysokość i szerokość rodzica (ramki)
     <Box
       display="flex"
       flexDirection="column"
       justifyContent="center"
       alignItems="center"
-      flex="1" // Wypełnia całą dostępną przestrzeń w ramce
+      flex="1"
       w="full"
     >
       <Stack gap="8" w="full" maxW="400px">
-        {" "}
-        {/* maxW ogranicza szerokość samego formularza */}
         <Stack gap="2">
           <Text fontWeight="medium" fontSize="sm">
             Project Name
@@ -56,6 +71,7 @@ export function CreateProject() {
             variant="subtle"
             size="lg"
             h="12"
+            disabled={isSubmitting}
           />
         </Stack>
         <Stack gap="3">
@@ -84,20 +100,17 @@ export function CreateProject() {
           </HStack>
         </Stack>
         <Button
-          disabled={!name}
+          loading={isSubmitting} // Chakra v3 automatycznie obsłuży spinner
+          disabled={!name || isSubmitting}
           bg="black"
           color="white"
           _dark={{ bg: "white", color: "black" }}
           size="lg"
           h="12"
           borderRadius="xl"
-          onClick={() => {
-            handleSave();
-            console.log("Saving project:", { name, color: selectedColor });
-            navigate("/home");
-          }}
+          onClick={handleSave}
         >
-          Save Project
+          Create project
         </Button>
       </Stack>
     </Box>
