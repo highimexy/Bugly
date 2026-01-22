@@ -7,6 +7,7 @@ import { ProtectedRoute } from "./components/ui/ProtectedRoute";
 import { Box } from "@chakra-ui/react";
 import { ToggleColorMode } from "./components/ui/ToggleColorMode";
 import { ProjectProvider } from "./context/ProjectContext";
+import { ProjectDetails } from "./pages/project-details/ProjectDetails";
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
             <Route element={<DashboardLayout />}>
               <Route path="/home" element={<Home />} />
               <Route path="/create-project" element={<CreateProject />} />
+              <Route path="/project/:id" element={<ProjectDetails />} />
             </Route>
           </Route>
 

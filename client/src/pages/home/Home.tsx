@@ -2,7 +2,6 @@ import { Stack, Text, Button, SimpleGrid, Circle, Box } from "@chakra-ui/react";
 import { LuPlus } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
 import { useProjects } from "../../context/ProjectContext";
-// Import obrazka
 import noProjectsImg from "/empty-state/no-projects.webp";
 
 export function Home() {
@@ -18,8 +17,8 @@ export function Home() {
         align="center"
         textAlign="center"
         borderRadius="2xl"
-        position="relative" // Konieczne dla pozycjonowania tła pod spodem
-        overflow="hidden" // Aby tło nie wystawało poza zaokrąglone rogi
+        position="relative"
+        overflow="hidden"
         _before={{
           content: '""',
           position: "absolute",
@@ -29,10 +28,9 @@ export function Home() {
           bottom: 0,
           bgImage: `url(${noProjectsImg})`,
           bgSize: "cover",
-          // EFEKTY:
-          filter: "grayscale(100%)", // Robi zdjęcie czarno-białym
-          opacity: "0.2", // Zmniejsza widoczność zdjęcia (np. do 20%)
-          zIndex: 0, // Kładzie tło pod spód
+          filter: "grayscale(100%)",
+          opacity: "0.2",
+          zIndex: 0,
         }}
       >
         <Text textStyle="4xl" color="gray.400">
@@ -59,6 +57,8 @@ export function Home() {
       {projects.map((project) => (
         <Box
           key={project.id}
+          as="button"
+          onClick={() => navigate(`/project/${project.id}`)}
           p="5"
           bg={{ _light: "white", _dark: "gray.900" }}
           borderRadius="2xl"
@@ -68,6 +68,8 @@ export function Home() {
           display="flex"
           flexDirection="column"
           alignItems="center"
+          _hover={{ bg: "gray.50", _dark: { bg: "gray.800" } }}
+          cursor="pointer"
           gap="3"
         >
           <Circle size="16" bg={project.color} color="white">
@@ -78,8 +80,6 @@ export function Home() {
           <Text fontWeight="semibold">{project.name}</Text>
         </Box>
       ))}
-
-      {/* Przycisk dodawania nowej karty na końcu listy */}
       <Box
         as="button"
         onClick={() => navigate("/create-project")}
