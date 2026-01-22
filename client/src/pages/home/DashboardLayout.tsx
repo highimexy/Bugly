@@ -8,15 +8,25 @@ import {
   Heading,
 } from "@chakra-ui/react";
 import { LuSettings, LuPlus, LuFolder, LuLogOut } from "react-icons/lu";
-import { useNavigate, Outlet, useLocation } from "react-router-dom";
+import { useNavigate, Outlet, useLocation, useParams } from "react-router-dom";
 import { useProjects } from "../../context/ProjectContext";
 
 export function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { projects } = useProjects(); // Pobieranie projektów z kontekstu
+  const { id } = useParams(); // Logika: Pobranie ID projektu z adresu URL
+  const { projects } = useProjects();
 
+  // Logika: Dynamiczna zmiana nagłówka w zależności od projektu
   const getPageHeader = () => {
+    if (location.pathname.startsWith("/project/")) {
+      const currentProject = projects.find((p) => p.id === id);
+      return {
+        title: currentProject ? currentProject.name : "Project Details",
+        subtitle: "Manage bugs and issues for this project",
+      };
+    }
+
     switch (location.pathname) {
       case "/create-project":
         return { title: "New Project", subtitle: "Set up your workspace" };
@@ -44,7 +54,7 @@ export function DashboardLayout() {
         h="100vh"
       >
         <Flex justify="center" mb="6">
-          <Text fontFamily={"archivo black"} fontSize="4xl">
+          <Text fontFamily={"archivo black"} fontSize="4xl" color="blue.500">
             Bugly
           </Text>
         </Flex>
@@ -76,12 +86,13 @@ export function DashboardLayout() {
             />
           </Flex>
           <Stack gap="1">
-            {/* Dynamiczne mapowanie projektów */}
             {projects.map((project) => (
               <ProjectLink
                 key={project.id}
+                id={project.id} // Logika: Przekazanie ID do komponentu
                 label={project.name}
                 color={project.color}
+                isActive={id === project.id} // Logika: Sprawdzenie czy ten projekt jest aktywny
               />
             ))}
           </Stack>
@@ -156,7 +167,9 @@ function NavItem({ icon, label, active, color, onClick }: any) {
   );
 }
 
-function ProjectLink({ label, color }: any) {
+function ProjectLink({ label, color, id, isActive }: any) {
+  const navigate = useNavigate(); // Logika: Hook do nawigacji
+
   return (
     <Link
       display="flex"
@@ -166,7 +179,10 @@ function ProjectLink({ label, color }: any) {
       py="1.5"
       borderRadius="lg"
       fontSize="sm"
-      color="gray.500"
+      cursor="pointer"
+      onClick={() => navigate(`/project/${id}`)} // Logika: Przekierowanie po kliknięciu
+      bg={isActive ? { _light: "gray.50", _dark: "gray.800" } : "transparent"} // Opcjonalne wyróżnienie
+      color={isActive ? { _light: "black", _dark: "white" } : "gray.500"}
       transition="all 0.2s ease-in-out"
       _hover={{
         color: "black",
@@ -176,7 +192,7 @@ function ProjectLink({ label, color }: any) {
       }}
     >
       <Box borderRadius="full" bg={color} w="8px" h="8px" />
-      <Text>{label}</Text>
+      <Text fontWeight={isActive ? "bold" : "normal"}>{label}</Text>
     </Link>
   );
 }
