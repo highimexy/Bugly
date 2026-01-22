@@ -3,11 +3,14 @@ import { LuPlus } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
 import { useProjects } from "../../context/ProjectContext";
 import noProjectsImg from "/empty-state/no-projects.webp";
+// Ścieżka do drugiego zdjęcia z folderu public
+import projectsBgImg from "/home-with-projects/final-bug-for-website.webp";
 
 export function Home() {
   const navigate = useNavigate();
-  const { projects } = useProjects(); // Pobierz listę projektów
+  const { projects } = useProjects();
 
+  // WIDOK: BRAK PROJEKTÓW
   if (projects.length === 0) {
     return (
       <Stack
@@ -28,15 +31,17 @@ export function Home() {
           bottom: 0,
           bgImage: `url(${noProjectsImg})`,
           bgSize: "cover",
+          bgPosition: "center",
           filter: "grayscale(100%)",
           opacity: "0.2",
           zIndex: 0,
         }}
       >
-        <Text textStyle="4xl" color="gray.400">
+        <Text textStyle="4xl" color="gray.400" zIndex={1}>
           NO PROJECTS?
         </Text>
         <Button
+          zIndex={1}
           onClick={() => navigate("/create-project")}
           bg="black"
           color="white"
@@ -52,50 +57,86 @@ export function Home() {
     );
   }
 
+  // WIDOK: LISTA PROJEKTÓW
   return (
-    <SimpleGrid columns={{ base: 1, md: 3, lg: 5 }} gap="6">
-      {projects.map((project) => (
-        <Box
-          key={project.id}
-          as="button"
-          onClick={() => navigate(`/project/${project.id}`)}
-          p="5"
-          bg={{ _light: "white", _dark: "gray.900" }}
-          borderRadius="2xl"
-          borderWidth="1px"
-          borderColor="gray.100"
-          _dark={{ borderColor: "gray.700" }}
-          display="flex"
-          flexDirection="column"
-          alignItems="center"
-          _hover={{ bg: "gray.50", _dark: { bg: "gray.800" } }}
-          cursor="pointer"
-          gap="3"
-        >
-          <Circle size="16" bg={project.color} color="white">
-            <Text fontSize="2xl" fontWeight="bold">
-              {project.name.charAt(0).toUpperCase()}
-            </Text>
-          </Circle>
-          <Text fontWeight="semibold">{project.name}</Text>
-        </Box>
-      ))}
-      <Box
-        as="button"
-        onClick={() => navigate("/create-project")}
-        border="2px dashed"
-        borderColor="gray.100"
-        _dark={{ borderColor: "gray.700" }}
-        borderRadius="2xl"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-        cursor="pointer"
-        _hover={{ bg: "gray.50", _dark: { bg: "gray.800" } }}
-        transition="background-color 0.2s ease-in-out"
+    <Box
+      position="relative"
+      flex="1"
+      p="1" // Mały padding, żeby obramowania kart nie dotykały krawędzi tła
+      _before={{
+        content: '""',
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        bgImage: `url(${projectsBgImg})`,
+        bgSize: "cover",
+        bgPosition: "center",
+        filter: "grayscale(100%)",
+        opacity: "0.15", // Delikatne tło, by nie psuło czytelności kart
+        zIndex: 0,
+        pointerEvents: "none",
+      }}
+    >
+      <SimpleGrid
+        columns={{ base: 1, md: 3, lg: 5 }}
+        gap="6"
+        position="relative"
+        zIndex={1}
       >
-        <LuPlus size="24px" color="gray" />
-      </Box>
-    </SimpleGrid>
+        {projects.map((project) => (
+          <Box
+            key={project.id}
+            as="button"
+            onClick={() => navigate(`/project/${project.id}`)}
+            p="5"
+            bg={{ _light: "white", _dark: "gray.900" }}
+            borderRadius="2xl"
+            borderWidth="1px"
+            borderColor="gray.100"
+            _dark={{ borderColor: "gray.700" }}
+            display="flex"
+            flexDirection="column"
+            alignItems="center"
+            _hover={{
+              bg: "gray.50",
+              _dark: { bg: "gray.800" },
+              transform: "translateY(-2px)",
+            }}
+            transition="all 0.2s ease-in-out"
+            cursor="pointer"
+            gap="3"
+            boxShadow="sm"
+          >
+            <Circle size="16" bg={project.color} color="white">
+              <Text fontSize="2xl" fontWeight="bold">
+                {project.name.charAt(0).toUpperCase()}
+              </Text>
+            </Circle>
+            <Text fontWeight="semibold">{project.name}</Text>
+          </Box>
+        ))}
+
+        {/* Przycisk dodawania kolejnego projektu wewnątrz siatki */}
+        <Box
+          as="button"
+          onClick={() => navigate("/create-project")}
+          border="2px dashed"
+          borderColor="gray.200"
+          _dark={{ borderColor: "gray.700" }}
+          borderRadius="2xl"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          cursor="pointer"
+          minH="140px"
+          _hover={{ bg: "white", _dark: { bg: "gray.800" } }}
+          transition="all 0.2s ease-in-out"
+        >
+          <LuPlus size="24px" color="gray" />
+        </Box>
+      </SimpleGrid>
+    </Box>
   );
 }
