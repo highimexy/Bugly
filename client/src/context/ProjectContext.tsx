@@ -10,8 +10,12 @@ export interface Bug {
   id: string;
   projectId: string;
   title: string;
+  stepsToReproduce: string;
+  actualResult: string;
+  expectedResult: string;
   priority: "Low" | "Medium" | "High";
-  status: "Open" | "In Progress" | "Resolved";
+  device: string;
+  screenshotUrl?: string;
   createdAt: string;
 }
 
@@ -19,7 +23,7 @@ interface Project {
   id: string;
   name: string;
   color: string;
-  bugs?: Bug[]; // Backend zwraca błędy wewnątrz obiektu projektu (Preload)
+  bugs?: Bug[];
 }
 
 interface ProjectContextType {
@@ -27,32 +31,26 @@ interface ProjectContextType {
   bugs: Bug[];
   addProject: (name: string, color: string) => Promise<string | undefined>;
   deleteProject: (id: string) => Promise<void>;
-  addBug: (
-    projectId: string,
-    title: string,
-    priority: Bug["priority"],
-  ) => Promise<void>;
+  addBug: (bugData: Omit<Bug, "id" | "createdAt">) => Promise<void>;
+  deleteBug: (bugId: string) => Promise<void>; // Dodane do interfejsu
   isLoading: boolean;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 
-const API_URL = "http://localhost:8081/api"; // Twój nowy port w Go
+const API_URL = "http://localhost:8081/api";
 
 export function ProjectProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [bugs, setBugs] = useState<Bug[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 1. POBIERANIE DANYCH Z BACKENDU
   const fetchAllData = async () => {
     try {
       const response = await fetch(`${API_URL}/projects`);
       const data: Project[] = await response.json();
 
       setProjects(data);
-
-      // Wyciągamy błędy ze wszystkich projektów do jednej płaskiej tablicy dla wygody interfejsu
       const allBugs = data.flatMap((p) => p.bugs || []);
       setBugs(allBugs);
     } catch (error) {
@@ -66,33 +64,24 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     fetchAllData();
   }, []);
 
-  // 2. DODAWANIE PROJEKTU
   const addProject = async (name: string, color: string) => {
-    const newProject = {
-      // ID zostanie nadane przez backend lub zostawiamy to co masz
-      id: Date.now().toString(),
-      name,
-      color,
-    };
-
     try {
       const response = await fetch(`${API_URL}/projects`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newProject),
+        body: JSON.stringify({ name, color }),
       });
 
       if (response.ok) {
         const savedProject = await response.json();
-        await fetchAllData(); // Odświeżamy listę
-        return savedProject.id; // Zwracamy ID otrzymane z backendu
+        await fetchAllData();
+        return savedProject.id;
       }
     } catch (error) {
       console.error("Błąd dodawania projektu:", error);
     }
   };
 
-  // 3. USUWANIE PROJEKTU
   const deleteProject = async (id: string) => {
     try {
       const response = await fetch(`${API_URL}/projects/${id}`, {
@@ -100,26 +89,17 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       });
 
       if (response.ok) {
-        setProjects((prev) => prev.filter((p) => p.id !== id));
-        setBugs((prev) => prev.filter((b) => b.projectId !== id));
+        await fetchAllData();
       }
     } catch (error) {
       console.error("Błąd usuwania projektu:", error);
     }
   };
 
-  // 4. DODAWANIE BŁĘDU
-  const addBug = async (
-    projectId: string,
-    title: string,
-    priority: Bug["priority"],
-  ) => {
+  const addBug = async (bugData: Omit<Bug, "id" | "createdAt">) => {
     const newBug = {
-      id: `BUG-${Math.floor(Math.random() * 1000)}`,
-      projectId,
-      title,
-      priority,
-      status: "Open",
+      ...bugData,
+      id: `BUG-${Math.floor(1000 + Math.random() * 9000)}`,
     };
 
     try {
@@ -133,13 +113,36 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         await fetchAllData();
       }
     } catch (error) {
-      console.error("Błąd dodawania błędu:", error);
+      console.error("Error creating bug:", error);
+    }
+  };
+
+  // DODANA FUNKCJA USUWANIA BŁĘDU
+  const deleteBug = async (bugId: string) => {
+    try {
+      const response = await fetch(`${API_URL}/bugs/${bugId}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        await fetchAllData();
+      }
+    } catch (error) {
+      console.error("Błąd usuwania błędu:", error);
     }
   };
 
   return (
     <ProjectContext.Provider
-      value={{ projects, bugs, addProject, deleteProject, addBug, isLoading }}
+      value={{
+        projects,
+        bugs,
+        addProject,
+        deleteProject,
+        addBug,
+        deleteBug, // Dodane do Providera
+        isLoading,
+      }}
     >
       {children}
     </ProjectContext.Provider>

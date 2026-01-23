@@ -3,7 +3,6 @@ import { LuPlus } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
 import { useProjects } from "../../context/ProjectContext";
 import noProjectsImg from "/empty-state/no-projects.webp";
-// Ścieżka do drugiego zdjęcia z folderu public
 import projectsBgImg from "/home-with-projects/final-bug-for-website.webp";
 
 export function Home() {
@@ -31,7 +30,6 @@ export function Home() {
           bottom: 0,
           bgImage: `url(${noProjectsImg})`,
           bgSize: "cover",
-          bgPosition: "center",
           filter: "grayscale(100%)",
           opacity: "0.2",
           zIndex: 0,
@@ -62,7 +60,7 @@ export function Home() {
     <Box
       position="relative"
       flex="1"
-      p="1" // Mały padding, żeby obramowania kart nie dotykały krawędzi tła
+      p="1"
       _before={{
         content: '""',
         position: "absolute",
@@ -72,9 +70,8 @@ export function Home() {
         bottom: 0,
         bgImage: `url(${projectsBgImg})`,
         bgSize: "cover",
-        bgPosition: "center",
         filter: "grayscale(100%)",
-        opacity: "0.15", // Delikatne tło, by nie psuło czytelności kart
+        opacity: "0.15",
         zIndex: 0,
         pointerEvents: "none",
       }}

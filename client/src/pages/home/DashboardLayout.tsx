@@ -14,10 +14,9 @@ import { useProjects } from "../../context/ProjectContext";
 export function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { id } = useParams(); // Logika: Pobranie ID projektu z adresu URL
+  const { id } = useParams();
   const { projects } = useProjects();
 
-  // Logika: Dynamiczna zmiana nagłówka w zależności od projektu
   const getPageHeader = () => {
     if (location.pathname.startsWith("/project/")) {
       const currentProject = projects.find((p) => p.id === id);
@@ -89,10 +88,10 @@ export function DashboardLayout() {
             {projects.map((project) => (
               <ProjectLink
                 key={project.id}
-                id={project.id} // Logika: Przekazanie ID do komponentu
+                id={project.id}
                 label={project.name}
                 color={project.color}
-                isActive={id === project.id} // Logika: Sprawdzenie czy ten projekt jest aktywny
+                isActive={id === project.id}
               />
             ))}
           </Stack>
@@ -168,7 +167,7 @@ function NavItem({ icon, label, active, color, onClick }: any) {
 }
 
 function ProjectLink({ label, color, id, isActive }: any) {
-  const navigate = useNavigate(); // Logika: Hook do nawigacji
+  const navigate = useNavigate();
 
   return (
     <Link
@@ -180,8 +179,8 @@ function ProjectLink({ label, color, id, isActive }: any) {
       borderRadius="lg"
       fontSize="sm"
       cursor="pointer"
-      onClick={() => navigate(`/project/${id}`)} // Logika: Przekierowanie po kliknięciu
-      bg={isActive ? { _light: "gray.50", _dark: "gray.800" } : "transparent"} // Opcjonalne wyróżnienie
+      onClick={() => navigate(`/project/${id}`)}
+      bg={isActive ? { _light: "gray.50", _dark: "gray.800" } : "transparent"}
       color={isActive ? { _light: "black", _dark: "white" } : "gray.500"}
       transition="all 0.2s ease-in-out"
       _hover={{

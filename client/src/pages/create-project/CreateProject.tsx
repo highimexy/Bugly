@@ -26,7 +26,7 @@ export function CreateProject() {
   const { addProject } = useProjects();
   const [name, setName] = useState("");
   const [selectedColor, setSelectedColor] = useState(COLORS[0]);
-  const [isSubmitting, setIsSubmitting] = useState(false); // Stan ładowania
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSave = async () => {
     if (!name) return;
@@ -100,7 +100,7 @@ export function CreateProject() {
           </HStack>
         </Stack>
         <Button
-          loading={isSubmitting} // Chakra v3 automatycznie obsłuży spinner
+          loading={isSubmitting}
           disabled={!name || isSubmitting}
           bg="black"
           color="white"
