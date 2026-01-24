@@ -22,7 +22,6 @@ import {
   LuMonitor,
   LuInfo,
   LuStepForward,
-  LuTarget,
 } from "react-icons/lu";
 import { type Bug } from "../context/ProjectContext";
 
@@ -46,7 +45,7 @@ export function BugDetailsModal({ bug, onClose }: Props) {
         <DialogContent
           borderRadius="2xl"
           border="1px solid"
-          borderColor="gray.100"
+          borderColor={{ _light: "gray.100", _dark: "gray.800" }}
           overflow="hidden"
         >
           <DialogHeader
@@ -80,6 +79,7 @@ export function BugDetailsModal({ bug, onClose }: Props) {
                 variant="solid"
                 borderRadius="md"
                 px="3"
+                color="white"
               >
                 {bug.priority}
               </Badge>
@@ -159,44 +159,55 @@ export function BugDetailsModal({ bug, onClose }: Props) {
                   <Text
                     fontWeight="bold"
                     fontSize="xs"
-                    color="gray.400"
+                    color="red.600" // Czerwony tekst etykiety
                     textTransform="uppercase"
                     letterSpacing="wider"
                   >
                     Actual Result
                   </Text>
                   <Box
-                    p="3"
-                    bg="red.50"
-                    color="red.800"
-                    borderRadius="lg"
+                    p="4"
+                    bg="white" // Spójne tło z resztą pól
+                    borderWidth="1px"
+                    borderColor="gray.100"
+                    borderRadius="xl"
                     fontSize="sm"
-                    borderLeft="4px solid"
-                    borderColor="red.300"
-                    _dark={{ bg: "red.900/20", color: "red.200" }}
+                    lineHeight="tall"
+                    color="gray.800"
+                    _dark={{
+                      bg: "gray.800",
+                      borderColor: "gray.700",
+                      color: "gray.200",
+                    }}
                   >
                     {bug.actualResult}
                   </Box>
                 </Stack>
+
                 <Stack gap="2">
                   <Text
                     fontWeight="bold"
                     fontSize="xs"
-                    color="gray.400"
+                    color="green.600"
                     textTransform="uppercase"
                     letterSpacing="wider"
                   >
                     Expected Result
                   </Text>
                   <Box
-                    p="3"
-                    bg="green.50"
-                    color="green.800"
-                    borderRadius="lg"
+                    p="4"
+                    bg="white"
+                    borderWidth="1px"
+                    borderColor="gray.100"
+                    borderRadius="xl"
                     fontSize="sm"
-                    borderLeft="4px solid"
-                    borderColor="green.300"
-                    _dark={{ bg: "green.900/20", color: "green.200" }}
+                    lineHeight="tall"
+                    color="gray.800"
+                    _dark={{
+                      bg: "gray.800",
+                      borderColor: "gray.700",
+                      color: "gray.200",
+                    }}
                   >
                     {bug.expectedResult}
                   </Box>
@@ -235,9 +246,7 @@ export function BugDetailsModal({ bug, onClose }: Props) {
             borderColor="gray.100"
           >
             <DialogActionTrigger asChild>
-              <Button variant="ghost" fontWeight="bold">
-                Close Details
-              </Button>
+              <Button variant="outline">Close Details</Button>
             </DialogActionTrigger>
           </DialogFooter>
         </DialogContent>

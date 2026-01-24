@@ -118,11 +118,17 @@ export function ProjectDetails() {
         borderColor="gray.100"
         _dark={{ borderColor: "gray.800" }}
       >
-        <Box px="6" py="3" borderRightWidth="1px" borderColor="gray.200">
+        <Box px="6" py="3" borderColor="gray.200">
           <CreateBugModal projectId={project.id} />
         </Box>
 
-        <Box px="6" py="3" borderRightWidth="1px" borderColor="gray.200">
+        <Box
+          px="6"
+          py="3"
+          borderLeftWidth="1px"
+          borderRightWidth="1px"
+          borderColor="gray.200"
+        >
           <Text
             fontSize="xs"
             fontWeight="bold"
@@ -167,12 +173,12 @@ export function ProjectDetails() {
       {/* 3. TABELA BŁĘDÓW */}
       <Box
         border="1px solid"
-        borderColor="gray.200"
+        borderColor={{ _light: "gray.100", _dark: "gray.800" }}
         borderRadius="xl"
         overflow="hidden"
       >
         <Table.Root variant="line" size="md">
-          <Table.Header bg="gray.50" _dark={{ bg: "gray.800" }}>
+          <Table.Header bg="gray.100" _dark={{ bg: "gray.800" }}>
             <Table.Row>
               <Table.ColumnHeader>ID</Table.ColumnHeader>
               <Table.ColumnHeader>Title</Table.ColumnHeader>
@@ -205,6 +211,7 @@ export function ProjectDetails() {
                           : "blue"
                     }
                     variant="solid"
+                    color="white"
                   >
                     {bug.priority}
                   </Badge>
