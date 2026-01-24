@@ -84,7 +84,7 @@ export function CreateBugModal({ projectId }: { projectId: string }) {
                     Device
                   </Text>
                   <Input
-                    placeholder="iPhone 15, Chrome v120"
+                    placeholder="iPhone 15"
                     value={newBug.device}
                     onChange={(e) =>
                       setNewBug({ ...newBug, device: e.target.value })
@@ -115,7 +115,7 @@ export function CreateBugModal({ projectId }: { projectId: string }) {
               </HStack>
 
               <Box>
-                <Text mb="1" fontSize="sm" fontWeight="bold">
+                <Text mb="1" fontSize="sm" fontWeight="bold" color="blue.600">
                   Steps to Reproduce
                 </Text>
                 <Textarea
@@ -129,8 +129,8 @@ export function CreateBugModal({ projectId }: { projectId: string }) {
 
               <HStack gap="4">
                 <Box flex="1">
-                  <Text mb="1" fontSize="sm" fontWeight="bold">
-                    Actual
+                  <Text mb="1" fontSize="sm" fontWeight="bold" color="red.600">
+                    Actual Result
                   </Text>
                   <Input
                     value={newBug.actualResult}
@@ -140,8 +140,13 @@ export function CreateBugModal({ projectId }: { projectId: string }) {
                   />
                 </Box>
                 <Box flex="1">
-                  <Text mb="1" fontSize="sm" fontWeight="bold">
-                    Expected
+                  <Text
+                    mb="1"
+                    fontSize="sm"
+                    fontWeight="bold"
+                    color="green.600"
+                  >
+                    Expected Result
                   </Text>
                   <Input
                     value={newBug.expectedResult}
@@ -157,7 +162,7 @@ export function CreateBugModal({ projectId }: { projectId: string }) {
                   Screenshot URL
                 </Text>
                 <Input
-                  placeholder="https://imgur.com/..."
+                  placeholder="https://drive.google.com/..."
                   value={newBug.screenshotUrl}
                   onChange={(e) =>
                     setNewBug({ ...newBug, screenshotUrl: e.target.value })

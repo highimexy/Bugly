@@ -17,12 +17,7 @@ import {
   Link,
   Circle,
 } from "@chakra-ui/react";
-import {
-  LuExternalLink,
-  LuMonitor,
-  LuInfo,
-  LuStepForward,
-} from "react-icons/lu";
+import { LuExternalLink, LuMonitor, LuInfo } from "react-icons/lu";
 import { type Bug } from "../context/ProjectContext";
 
 interface Props {
@@ -128,13 +123,13 @@ export function BugDetailsModal({ bug, onClose }: Props) {
 
               {/* Steps to Reproduce */}
               <Stack gap="2">
-                <HStack gap="2" color="blue.600">
-                  <LuStepForward size="16px" />
+                <HStack gap="2">
                   <Text
                     fontWeight="bold"
                     fontSize="xs"
                     textTransform="uppercase"
                     letterSpacing="wider"
+                    color="blue.600"
                   >
                     Steps to Reproduce
                   </Text>
@@ -159,7 +154,7 @@ export function BugDetailsModal({ bug, onClose }: Props) {
                   <Text
                     fontWeight="bold"
                     fontSize="xs"
-                    color="red.600" // Czerwony tekst etykiety
+                    color="red.600"
                     textTransform="uppercase"
                     letterSpacing="wider"
                   >
@@ -167,7 +162,7 @@ export function BugDetailsModal({ bug, onClose }: Props) {
                   </Text>
                   <Box
                     p="4"
-                    bg="white" // Spójne tło z resztą pól
+                    bg="white"
                     borderWidth="1px"
                     borderColor="gray.100"
                     borderRadius="xl"
