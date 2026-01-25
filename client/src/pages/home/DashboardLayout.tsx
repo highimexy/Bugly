@@ -118,7 +118,7 @@ export function DashboardLayout() {
           </Box>
           <Box
             flex="1"
-            borderRadius="2xl"
+            borderRadius="md"
             border="2px dashed"
             borderColor="gray.200"
             _dark={{ borderColor: "gray.700" }}

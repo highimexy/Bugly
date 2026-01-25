@@ -4,6 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { Box, Button, Center, Heading, Input, Stack } from "@chakra-ui/react";
 import { Field } from "@/components/ui/field";
+import { toaster } from "@/components/ui/toaster";
 
 export function Auth() {
   const [email, setEmail] = useState("");
@@ -19,14 +20,37 @@ export function Auth() {
       return response.data;
     },
     onSuccess: (data) => {
+      // Czyścimy ewentualne toastery błędów przed wejściem
+      toaster.dismiss();
       localStorage.setItem("token", data.token);
+
+      toaster.create({
+        title: "Zalogowano pomyślnie",
+        type: "success",
+      });
       navigate("/home");
     },
     onError: (error: any) => {
-      // Tutaj możesz dodać powiadomienie o błędzie (Toast)
-      alert(error.response?.data?.error || "Błąd połączenia z serwerem");
+      const errorMessage =
+        error.response?.data?.error || "Błąd połączenia z serwerem";
+
+      // Kluczowe: usuwa poprzednie toastery, żeby nie "spamować" ekranu
+      toaster.dismiss();
+
+      toaster.create({
+        title: "Błąd logowania",
+        description: errorMessage,
+        type: "error",
+      });
     },
   });
+
+  // Funkcja pomocnicza, by nie powtarzać logiki przycisku i Entera
+  const handleLogin = () => {
+    if (!loginMutation.isPending) {
+      loginMutation.mutate();
+    }
+  };
 
   return (
     <Box minH="100vh" bg="mainBg" display="flex" flexDirection="column">
@@ -37,6 +61,7 @@ export function Auth() {
               size="6xl"
               fontFamily={"archivo black"}
               letterSpacing="tight"
+              color="blue.500"
             >
               Bugly
             </Heading>
@@ -59,6 +84,7 @@ export function Auth() {
                   variant="subtle"
                   size="lg"
                   h="12"
+                  disabled={loginMutation.isPending}
                 />
               </Field>
 
@@ -71,12 +97,14 @@ export function Auth() {
                   variant="subtle"
                   size="lg"
                   h="12"
+                  disabled={loginMutation.isPending}
+                  onKeyDown={(e) => e.key === "Enter" && handleLogin()}
                 />
               </Field>
 
               <Button
-                onClick={() => loginMutation.mutate()}
-                loading={loginMutation.isPending} // Chakra UI v3 obsłuży spinner
+                onClick={handleLogin}
+                loading={loginMutation.isPending}
                 bg="black"
                 color="white"
                 _hover={{ bg: "gray.800" }}
@@ -89,6 +117,8 @@ export function Auth() {
                 h="12"
                 fontWeight="medium"
                 borderRadius="xl"
+                // Dodatkowe zabezpieczenie wizualne
+                disabled={!email || !password}
               >
                 Kontynuuj
               </Button>

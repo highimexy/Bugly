@@ -28,13 +28,15 @@ import { BugDetailsModal } from "../../components/BugDetailsModal";
 export function ProjectDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  // Dodajemy deleteBug z contextu
   const { projects, deleteProject, bugs, deleteBug } = useProjects();
 
   // STANY
   const [searchTerm, setSearchTerm] = useState("");
   const [confirmDelete, setConfirmDelete] = useState("");
   const [selectedBug, setSelectedBug] = useState<Bug | null>(null);
+
+  // STAN DLA MODALA USUWANIA BŁĘDU
+  const [bugToDelete, setBugToDelete] = useState<Bug | null>(null);
 
   // LOGIKA DANYCH
   const project = projects.find((p) => p.id === id);
@@ -54,6 +56,13 @@ export function ProjectDetails() {
   const handleDeleteProject = async () => {
     await deleteProject(project.id);
     navigate("/home");
+  };
+
+  const handleDeleteBug = async () => {
+    if (bugToDelete) {
+      await deleteBug(bugToDelete.id);
+      setBugToDelete(null);
+    }
   };
 
   return (
@@ -106,13 +115,13 @@ export function ProjectDetails() {
         </DialogRoot>
       </Flex>
 
-      {/* 2. TOOLBAR: Raportowanie, Statystyki i Szukajka */}
+      {/* 2. TOOLBAR: Statystyki i Szukajka */}
       <Flex
         gap="0"
         mb="8"
         p="2"
         bg={{ _light: "gray.50", _dark: "gray.900" }}
-        borderRadius="2xl"
+        borderRadius="md"
         align="center"
         borderWidth="1px"
         borderColor="gray.100"
@@ -127,7 +136,7 @@ export function ProjectDetails() {
           py="3"
           borderLeftWidth="1px"
           borderRightWidth="1px"
-          borderColor="gray.200"
+          borderColor="gray.600"
         >
           <Text
             fontSize="xs"
@@ -174,7 +183,7 @@ export function ProjectDetails() {
       <Box
         border="1px solid"
         borderColor={{ _light: "gray.100", _dark: "gray.800" }}
-        borderRadius="xl"
+        borderRadius="md"
         overflow="hidden"
       >
         <Table.Root variant="line" size="md">
@@ -226,14 +235,8 @@ export function ProjectDetails() {
                     variant="ghost"
                     colorPalette="red"
                     onClick={(e) => {
-                      e.stopPropagation(); // Blokuje otwarcie szczegółów
-                      if (
-                        window.confirm(
-                          "Are you sure you want to delete this bug?",
-                        )
-                      ) {
-                        deleteBug(bug.id);
-                      }
+                      e.stopPropagation();
+                      setBugToDelete(bug);
                     }}
                   >
                     <LuTrash2 />
@@ -253,6 +256,40 @@ export function ProjectDetails() {
 
       {/* 4. MODAL SZCZEGÓŁÓW BŁĘDU */}
       <BugDetailsModal bug={selectedBug} onClose={() => setSelectedBug(null)} />
+
+      {/* 5. MODAL POTWIERDZENIA USUWANIA BŁĘDU (Bez wpisywania tekstu) */}
+      <DialogRoot
+        role="alertdialog"
+        placement="center"
+        open={!!bugToDelete}
+        onOpenChange={(e) => {
+          if (!e.open) setBugToDelete(null);
+        }}
+      >
+        <DialogBackdrop />
+        <DialogPositioner>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Bug Report</DialogTitle>
+            </DialogHeader>
+            <DialogBody>
+              <Text>
+                Are you sure you want to delete bug{" "}
+                <strong>{bugToDelete?.id}</strong>: "{bugToDelete?.title}"? This
+                action cannot be undone.
+              </Text>
+            </DialogBody>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setBugToDelete(null)}>
+                Cancel
+              </Button>
+              <Button colorPalette="red" onClick={handleDeleteBug}>
+                Confirm Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </DialogPositioner>
+      </DialogRoot>
     </Box>
   );
 }

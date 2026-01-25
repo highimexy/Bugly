@@ -38,7 +38,7 @@ export function BugDetailsModal({ bug, onClose }: Props) {
       <DialogBackdrop />
       <DialogPositioner>
         <DialogContent
-          borderRadius="2xl"
+          borderRadius="md"
           border="1px solid"
           borderColor={{ _light: "gray.100", _dark: "gray.800" }}
           overflow="hidden"
@@ -139,7 +139,7 @@ export function BugDetailsModal({ bug, onClose }: Props) {
                   bg="white"
                   borderWidth="1px"
                   borderColor="gray.100"
-                  borderRadius="xl"
+                  borderRadius="md"
                   fontSize="sm"
                   lineHeight="tall"
                   _dark={{ bg: "gray.800", borderColor: "gray.700" }}
@@ -165,7 +165,7 @@ export function BugDetailsModal({ bug, onClose }: Props) {
                     bg="white"
                     borderWidth="1px"
                     borderColor="gray.100"
-                    borderRadius="xl"
+                    borderRadius="md"
                     fontSize="sm"
                     lineHeight="tall"
                     color="gray.800"
@@ -194,7 +194,7 @@ export function BugDetailsModal({ bug, onClose }: Props) {
                     bg="white"
                     borderWidth="1px"
                     borderColor="gray.100"
-                    borderRadius="xl"
+                    borderRadius="md"
                     fontSize="sm"
                     lineHeight="tall"
                     color="gray.800"
@@ -222,7 +222,7 @@ export function BugDetailsModal({ bug, onClose }: Props) {
                     gap="2"
                     bg="gray.100"
                     _hover={{ bg: "gray.200", textDecoration: "none" }}
-                    borderRadius="xl"
+                    borderRadius="md"
                     fontSize="sm"
                     fontWeight="bold"
                     _dark={{ bg: "gray.800", _hover: { bg: "gray.700" } }}

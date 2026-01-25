@@ -53,6 +53,7 @@ func main() {
 
 		// BŁĘDY
 		api.POST("/bugs", handlers.CreateBug(db))
+		api.DELETE("/bugs/:id", handlers.DeleteBug(db))
 	}
 
 	// 6. Uruchomienie serwera

@@ -63,19 +63,25 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     fetchAllData();
   }, []);
-
   const addProject = async (name: string, color: string) => {
+    // Generujemy unikalne ID dla projektu
+    const newProject = {
+      id: `PRJ-${Math.floor(1000 + Math.random() * 9000)}`,
+      name,
+      color,
+    };
+
     try {
       const response = await fetch(`${API_URL}/projects`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, color }),
+        body: JSON.stringify(newProject), // Wysyłamy kompletny obiekt z ID
       });
 
       if (response.ok) {
         const savedProject = await response.json();
         await fetchAllData();
-        return savedProject.id;
+        return savedProject.id; // Zwracamy ID, aby nawigacja mogła zadziałać
       }
     } catch (error) {
       console.error("Błąd dodawania projektu:", error);
@@ -97,9 +103,18 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   };
 
   const addBug = async (bugData: Omit<Bug, "id" | "createdAt">) => {
+    const projectBugs = bugs.filter((b) => b.projectId === bugData.projectId);
+
+    const lastNumber = projectBugs.reduce((max, bug) => {
+      const num = parseInt(bug.id.replace("BUG-", ""), 10);
+      return !isNaN(num) && num > max ? num : max;
+    }, 0);
+
+    const nextId = `BUG-${lastNumber + 1}`;
+
     const newBug = {
       ...bugData,
-      id: `BUG-${Math.floor(1000 + Math.random() * 9000)}`,
+      id: nextId,
     };
 
     try {
@@ -140,7 +155,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         addProject,
         deleteProject,
         addBug,
-        deleteBug, // Dodane do Providera
+        deleteBug,
         isLoading,
       }}
     >

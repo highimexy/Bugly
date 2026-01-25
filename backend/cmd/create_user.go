@@ -3,39 +3,47 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/glebarez/sqlite"
 	"github.com/highimexy/Bugly/models"
+	"github.com/joho/godotenv"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
 func main() {
-    // 1. Połączenie z bazą
-    // UWAGA: Jeśli jesteś w folderze /backend, ścieżka to "./sqlite.db"
-    db, err := gorm.Open(sqlite.Open("./sqlite.db"), &gorm.Config{})
-    if err != nil {
-        log.Fatal("Błąd bazy:", err)
-    }
+	// Wczytaj plik .env
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Błąd ładowania pliku .env")
+	}
 
-    // DODAJ TĘ LINIĘ - ona stworzy tabelę users, jeśli jej nie ma
-    db.AutoMigrate(&models.User{})
+	db, err := gorm.Open(sqlite.Open("./sqlite.db"), &gorm.Config{})
+	if err != nil {
+		log.Fatal("Błąd bazy:", err)
+	}
 
-    email := "admin@bugly.com"
-    password := "haslo123!2024"
+	db.AutoMigrate(&models.User{})
 
-    // ... reszta kodu (bcrypt, tworzenie usera) ...
-    // 2. Hashowanie hasła
-    hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	// Pobierz dane ze zmiennych środowiskowych
+	email := os.Getenv("ADMIN_EMAIL")
+	password := os.Getenv("ADMIN_PASSWORD")
 
-    user := models.User{
-        Email:    email,
-        Password: string(hashedPassword),
-    }
+	if email == "" || password == "" {
+		log.Fatal("Brak danych logowania w pliku .env")
+	}
 
-    if err := db.Create(&user).Error; err != nil {
-        fmt.Printf("Błąd: %v\n", err)
-    } else {
-        fmt.Printf("Sukces! Stworzono użytkownika: %s\n", email)
-    }
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+
+	user := models.User{
+		Email:    email,
+		Password: string(hashedPassword),
+	}
+
+	if err := db.Create(&user).Error; err != nil {
+		fmt.Printf("Błąd: %v (użytkownik prawdopodobnie już istnieje)\n", err)
+	} else {
+		fmt.Printf("Sukces! Stworzono użytkownika: %s\n", email)
+	}
 }

@@ -38,23 +38,6 @@ func CreateProject(db *gorm.DB) gin.HandlerFunc {
 	}
 }
 
-// CreateBug dodaje błąd do bazy danych
-func CreateBug(db *gorm.DB) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var newBug models.Bug
-		if err := c.ShouldBindJSON(&newBug); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Nieprawidłowe dane błędu"})
-			return
-		}
-
-		if err := db.Create(&newBug).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Nie udało się zapisać błędu"})
-			return
-		}
-		c.JSON(http.StatusCreated, newBug)
-	}
-}
-
 // DeleteProject usuwa projekt (błędy zostaną usunięte kaskadowo dzięki gorm:constraint)
 func DeleteProject(db *gorm.DB) gin.HandlerFunc {
     return func(c *gin.Context) {
@@ -93,4 +76,36 @@ func DeleteProject(db *gorm.DB) gin.HandlerFunc {
 
         c.JSON(http.StatusOK, gin.H{"message": "Project and its bugs deleted successfully"})
     }
+}
+
+// CreateBug dodaje błąd do bazy danych
+func CreateBug(db *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var newBug models.Bug
+		if err := c.ShouldBindJSON(&newBug); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Nieprawidłowe dane błędu"})
+			return
+		}
+
+		if err := db.Create(&newBug).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Nie udało się zapisać błędu"})
+			return
+		}
+		c.JSON(http.StatusCreated, newBug)
+	}
+}
+
+// Usuwanie błędu
+func DeleteBug(db *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id := c.Param("id") // Pobiera "BUG-1" z adresu URL
+		
+		// Usuwamy rekord z bazy danych
+		if err := db.Where("id = ?", id).Delete(&models.Bug{}).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Nie udało się usunąć błędu"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"message": "Bug deleted successfully"})
+	}
 }

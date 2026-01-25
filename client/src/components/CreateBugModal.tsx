@@ -155,7 +155,6 @@ export function CreateBugModal({ projectId }: { projectId: string }) {
                             _selected={{ fontWeight: "bold" }}
                           >
                             <HStack gap="2">
-                              {/* Kropka koloru na liście rozwijanej */}
                               <Box
                                 w="2"
                                 h="2"
