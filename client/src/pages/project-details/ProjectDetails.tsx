@@ -24,6 +24,7 @@ import { useProjects, type Bug } from "../../context/ProjectContext";
 import { LuArrowLeft, LuTrash2, LuSearch } from "react-icons/lu";
 import { CreateBugModal } from "../../components/CreateBugModal";
 import { BugDetailsModal } from "../../components/BugDetailsModal";
+import { toaster } from "@/components/ui/toaster";
 
 export function ProjectDetails() {
   const { id } = useParams();
@@ -35,8 +36,10 @@ export function ProjectDetails() {
   const [confirmDelete, setConfirmDelete] = useState("");
   const [selectedBug, setSelectedBug] = useState<Bug | null>(null);
 
-  // STAN DLA MODALA USUWANIA BŁĘDU
+  // STANY DLA MODALI I LOADINGU
   const [bugToDelete, setBugToDelete] = useState<Bug | null>(null);
+  const [isDeletingProject, setIsDeletingProject] = useState(false);
+  const [isDeletingBug, setIsDeletingBug] = useState(false);
 
   // LOGIKA DANYCH
   const project = projects.find((p) => p.id === id);
@@ -54,14 +57,45 @@ export function ProjectDetails() {
     );
 
   const handleDeleteProject = async () => {
-    await deleteProject(project.id);
-    navigate("/home");
+    setIsDeletingProject(true);
+    try {
+      await deleteProject(project.id);
+      toaster.create({
+        title: "Project deleted",
+        description: `Successfully removed ${project.name}`,
+        type: "success",
+      });
+      navigate("/home");
+    } catch (error) {
+      toaster.create({
+        title: "Error",
+        description: "Failed to delete project",
+        type: "error",
+      });
+    } finally {
+      setIsDeletingProject(false);
+    }
   };
 
   const handleDeleteBug = async () => {
-    if (bugToDelete) {
+    if (!bugToDelete) return;
+    setIsDeletingBug(true);
+    try {
       await deleteBug(bugToDelete.id);
+      toaster.create({
+        title: "Bug deleted",
+        description: `Removed ${bugToDelete.id} from the list`,
+        type: "success",
+      });
       setBugToDelete(null);
+    } catch (error) {
+      toaster.create({
+        title: "Error",
+        description: "Failed to delete bug",
+        type: "error",
+      });
+    } finally {
+      setIsDeletingBug(false);
     }
   };
 
@@ -104,7 +138,8 @@ export function ProjectDetails() {
                 </DialogActionTrigger>
                 <Button
                   colorPalette="red"
-                  disabled={confirmDelete !== "DELETE"}
+                  loading={isDeletingProject}
+                  disabled={confirmDelete !== "DELETE" || isDeletingProject}
                   onClick={handleDeleteProject}
                 >
                   Delete Project
@@ -257,7 +292,7 @@ export function ProjectDetails() {
       {/* 4. MODAL SZCZEGÓŁÓW BŁĘDU */}
       <BugDetailsModal bug={selectedBug} onClose={() => setSelectedBug(null)} />
 
-      {/* 5. MODAL POTWIERDZENIA USUWANIA BŁĘDU (Bez wpisywania tekstu) */}
+      {/* 5. MODAL POTWIERDZENIA USUWANIA BŁĘDU */}
       <DialogRoot
         role="alertdialog"
         placement="center"
@@ -280,10 +315,18 @@ export function ProjectDetails() {
               </Text>
             </DialogBody>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setBugToDelete(null)}>
+              <Button
+                variant="outline"
+                onClick={() => setBugToDelete(null)}
+                disabled={isDeletingBug}
+              >
                 Cancel
               </Button>
-              <Button colorPalette="red" onClick={handleDeleteBug}>
+              <Button
+                colorPalette="red"
+                loading={isDeletingBug}
+                onClick={handleDeleteBug}
+              >
                 Confirm Delete
               </Button>
             </DialogFooter>

@@ -22,6 +22,7 @@ import {
 } from "@chakra-ui/react";
 import { LuPlus } from "react-icons/lu";
 import { useProjects } from "../context/ProjectContext";
+import { toaster } from "@/components/ui/toaster";
 
 const priorities = createListCollection({
   items: [
@@ -49,10 +50,27 @@ export function CreateBugModal({ projectId }: { projectId: string }) {
 
   const handleSave = async () => {
     setIsSubmitting(true);
-    await addBug({ ...newBug, projectId });
-    setIsSubmitting(false);
-    setNewBug(initialBugState);
-    setIsOpen(false);
+    try {
+      await addBug({ ...newBug, projectId });
+
+      // DODAJ TO:
+      toaster.create({
+        title: "Bug reported",
+        description: `Successfully added ${newBug.title}`,
+        type: "success",
+      });
+
+      setNewBug(initialBugState);
+      setIsOpen(false);
+    } catch (error) {
+      toaster.create({
+        title: "Error",
+        description: "Failed to save the bug",
+        type: "error",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

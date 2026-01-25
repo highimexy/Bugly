@@ -11,6 +11,7 @@ import {
 import { LuCheck } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
 import { useProjects } from "../../context/ProjectContext.tsx";
+import { toaster } from "@/components/ui/toaster";
 
 const COLORS = [
   "blue.400",
@@ -32,18 +33,33 @@ export function CreateProject() {
     if (!name) return;
 
     setIsSubmitting(true);
+    // Czyścimy stare powiadomienia przed nową akcją
+    toaster.dismiss();
+
     try {
-      // Czekamy na ID z backendu
       const newProjectId = await addProject(name, selectedColor);
 
       if (newProjectId) {
+        // Wyświetlamy sukces
+        toaster.create({
+          title: "Project created",
+          description: `Successfully created ${name}`,
+          type: "success",
+        });
+
         // Przenosimy do nowo stworzonego projektu
         navigate(`/project/${newProjectId}`);
       } else {
-        // Fallback do listy głównej
+        // Jeśli backend nie zwrócił ID, ale nie rzucił błędu
         navigate("/home");
       }
     } catch (error) {
+      // Wyświetlamy błąd w przypadku problemów z siecią/backendem
+      toaster.create({
+        title: "Failed to create project",
+        description: "Something went wrong. Please try again.",
+        type: "error",
+      });
       console.error("Failed to create project:", error);
     } finally {
       setIsSubmitting(false);
@@ -72,6 +88,8 @@ export function CreateProject() {
             size="lg"
             h="12"
             disabled={isSubmitting}
+            // Obsługa klawisza Enter
+            onKeyDown={(e) => e.key === "Enter" && handleSave()}
           />
         </Stack>
         <Stack gap="3">
@@ -109,6 +127,7 @@ export function CreateProject() {
           h="12"
           borderRadius="xl"
           onClick={handleSave}
+          _hover={{ opacity: 0.8 }}
         >
           Create project
         </Button>
