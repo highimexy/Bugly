@@ -17,9 +17,19 @@ import {
   DialogBackdrop,
   DialogPositioner,
   DialogTrigger,
+  Select,
+  createListCollection,
 } from "@chakra-ui/react";
 import { LuPlus } from "react-icons/lu";
 import { useProjects } from "../context/ProjectContext";
+
+const priorities = createListCollection({
+  items: [
+    { label: "Low", value: "Low", color: "blue.500" },
+    { label: "Medium", value: "Medium", color: "orange.500" },
+    { label: "High", value: "High", color: "red.500" },
+  ],
+});
 
 const initialBugState = {
   title: "",
@@ -91,26 +101,77 @@ export function CreateBugModal({ projectId }: { projectId: string }) {
                     }
                   />
                 </Box>
+
+                {/* TUTAJ NOWY SELECT ZGODNIE Z DOKUMENTACJĄ */}
                 <Box w="140px">
-                  <Text mb="1" fontSize="sm" fontWeight="bold">
-                    Priority
-                  </Text>
-                  <select
-                    style={{
-                      width: "100%",
-                      padding: "8px",
-                      borderRadius: "8px",
-                      border: "1px solid #ccc",
-                    }}
-                    value={newBug.priority}
-                    onChange={(e) =>
-                      setNewBug({ ...newBug, priority: e.target.value as any })
+                  <Select.Root
+                    collection={priorities}
+                    value={[newBug.priority]}
+                    onValueChange={(details) =>
+                      setNewBug({
+                        ...newBug,
+                        priority: details.value[0] as any,
+                      })
                     }
                   >
-                    <option value="Low">Low</option>
-                    <option value="Medium">Medium</option>
-                    <option value="High">High</option>
-                  </select>
+                    <Select.Label fontSize="sm" fontWeight="bold">
+                      Priority
+                    </Select.Label>
+
+                    <Select.Control>
+                      <Select.Trigger cursor="pointer">
+                        <HStack gap="2">
+                          {/* Kropka koloru dla wybranej wartości */}
+                          <Box
+                            w="2"
+                            h="2"
+                            borderRadius="full"
+                            bg={
+                              priorities.items.find(
+                                (i) => i.value === newBug.priority,
+                              )?.color
+                            }
+                          />
+                          <Select.ValueText placeholder="Select" />
+                        </HStack>
+                        <Select.Indicator />
+                      </Select.Trigger>
+                    </Select.Control>
+
+                    <Select.Positioner zIndex="9999">
+                      <Select.Content bg="white" _dark={{ bg: "gray.800" }}>
+                        {priorities.items.map((priority) => (
+                          <Select.Item
+                            item={priority}
+                            key={priority.value}
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="space-between"
+                            cursor="pointer"
+                            _hover={{
+                              bg: "gray.100",
+                              _dark: { bg: "gray.700" },
+                            }}
+                            _selected={{ fontWeight: "bold" }}
+                          >
+                            <HStack gap="2">
+                              {/* Kropka koloru na liście rozwijanej */}
+                              <Box
+                                w="2"
+                                h="2"
+                                borderRadius="full"
+                                bg={priority.color}
+                              />
+                              <Select.ItemText>
+                                {priority.label}
+                              </Select.ItemText>
+                            </HStack>
+                            <Select.ItemIndicator />
+                          </Select.Item>
+                        ))}
+                      </Select.Content>
+                    </Select.Positioner>
+                  </Select.Root>
                 </Box>
               </HStack>
 
@@ -132,7 +193,7 @@ export function CreateBugModal({ projectId }: { projectId: string }) {
                   <Text mb="1" fontSize="sm" fontWeight="bold" color="red.600">
                     Actual Result
                   </Text>
-                  <Input
+                  <Textarea
                     value={newBug.actualResult}
                     onChange={(e) =>
                       setNewBug({ ...newBug, actualResult: e.target.value })
@@ -148,7 +209,7 @@ export function CreateBugModal({ projectId }: { projectId: string }) {
                   >
                     Expected Result
                   </Text>
-                  <Input
+                  <Textarea
                     value={newBug.expectedResult}
                     onChange={(e) =>
                       setNewBug({ ...newBug, expectedResult: e.target.value })
