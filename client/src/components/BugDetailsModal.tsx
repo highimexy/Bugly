@@ -135,7 +135,7 @@ export function BugDetailsModal({ bug, onClose }: Props) {
                   </Text>
                 </HStack>
                 <Box
-                  p="4"
+                  p="3"
                   bg="white"
                   borderWidth="1px"
                   borderColor="gray.100"
@@ -161,7 +161,7 @@ export function BugDetailsModal({ bug, onClose }: Props) {
                     Actual Result
                   </Text>
                   <Box
-                    p="4"
+                    p="3"
                     bg="white"
                     borderWidth="1px"
                     borderColor="gray.100"
@@ -190,7 +190,7 @@ export function BugDetailsModal({ bug, onClose }: Props) {
                     Expected Result
                   </Text>
                   <Box
-                    p="4"
+                    p="3"
                     bg="white"
                     borderWidth="1px"
                     borderColor="gray.100"
@@ -211,7 +211,7 @@ export function BugDetailsModal({ bug, onClose }: Props) {
 
               {/* Screenshot Link */}
               {bug.screenshotUrl && (
-                <Box pt="2">
+                <Box>
                   <Link
                     href={bug.screenshotUrl}
                     target="_blank"
@@ -238,7 +238,7 @@ export function BugDetailsModal({ bug, onClose }: Props) {
             px="6"
             py="4"
             borderTopWidth="1px"
-            borderColor="gray.100"
+            borderColor={{ _light: "gray.100", _dark: "gray.800" }}
           >
             <DialogActionTrigger asChild>
               <Button variant="outline">Close Details</Button>

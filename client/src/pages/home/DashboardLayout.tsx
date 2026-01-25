@@ -142,7 +142,7 @@ function NavItem({ icon, label, active, color, onClick }: any) {
       gap="3"
       px="3"
       py="2"
-      borderRadius="xl"
+      borderRadius="md"
       cursor="pointer"
       onClick={onClick}
       transition="all 0.2s ease-in-out"
@@ -176,7 +176,7 @@ function ProjectLink({ label, color, id, isActive }: any) {
       gap="3"
       px="3"
       py="1.5"
-      borderRadius="lg"
+      borderRadius="md"
       fontSize="sm"
       cursor="pointer"
       onClick={() => navigate(`/project/${id}`)}
