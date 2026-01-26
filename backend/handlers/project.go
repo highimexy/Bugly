@@ -98,14 +98,17 @@ func CreateBug(db *gorm.DB) gin.HandlerFunc {
 // Usuwanie błędu
 func DeleteBug(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		id := c.Param("id") // Pobiera "BUG-1" z adresu URL
+		pID := c.Param("projectId")
+		bID := c.Param("bugId")
+
+		// Usuwamy błąd filtrując po OBU kluczach
+		result := db.Where("id = ? AND project_id = ?", bID, pID).Delete(&models.Bug{})
 		
-		// Usuwamy rekord z bazy danych
-		if err := db.Where("id = ?", id).Delete(&models.Bug{}).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Nie udało się usunąć błędu"})
+		if result.Error != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete bug"})
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"message": "Bug deleted successfully"})
+		c.JSON(http.StatusOK, gin.H{"message": "Bug deleted"})
 	}
 }

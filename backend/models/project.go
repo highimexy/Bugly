@@ -16,7 +16,7 @@ type Project struct {
 type Bug struct {
     ID               string    `gorm:"primaryKey" json:"id"`
     CreatedAt        time.Time `json:"createdAt"`
-    ProjectId        string    `json:"projectId"`
+    ProjectId        string    `gorm:"primaryKey" json:"projectId"`
     Title            string    `json:"title"`
     StepsToReproduce string    `json:"stepsToReproduce"`
     ActualResult     string    `json:"actualResult"`

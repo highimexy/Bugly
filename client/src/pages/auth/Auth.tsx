@@ -88,7 +88,7 @@ export function Auth() {
                 />
               </Field>
 
-              <Field label="Hasło">
+              <Field label="Password">
                 <Input
                   type="password"
                   value={password}
@@ -117,7 +117,6 @@ export function Auth() {
                 h="12"
                 fontWeight="medium"
                 borderRadius="xl"
-                // Dodatkowe zabezpieczenie wizualne
                 disabled={!email || !password}
               >
                 Kontynuuj

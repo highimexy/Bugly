@@ -32,7 +32,7 @@ interface ProjectContextType {
   addProject: (name: string, color: string) => Promise<string | undefined>;
   deleteProject: (id: string) => Promise<void>;
   addBug: (bugData: Omit<Bug, "id" | "createdAt">) => Promise<void>;
-  deleteBug: (bugId: string) => Promise<void>; // Dodane do interfejsu
+  deleteBug: (bugId: string, projectId: string) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -103,6 +103,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   };
 
   const addBug = async (bugData: Omit<Bug, "id" | "createdAt">) => {
+    // Teraz filtrujemy tylko błędy z tego projektu - to jest bezpieczne!
     const projectBugs = bugs.filter((b) => b.projectId === bugData.projectId);
 
     const lastNumber = projectBugs.reduce((max, bug) => {
@@ -112,36 +113,26 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
 
     const nextId = `BUG-${lastNumber + 1}`;
 
-    const newBug = {
-      ...bugData,
-      id: nextId,
-    };
+    const response = await fetch(`${API_URL}/bugs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...bugData, id: nextId }),
+    });
 
-    try {
-      const response = await fetch(`${API_URL}/bugs`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newBug),
-      });
-
-      if (response.ok) {
-        await fetchAllData();
-      }
-    } catch (error) {
-      console.error("Error creating bug:", error);
-    }
+    if (response.ok) await fetchAllData();
   };
 
   // DODANA FUNKCJA USUWANIA BŁĘDU
-  const deleteBug = async (bugId: string) => {
+  const deleteBug = async (bugId: string, projectId: string) => {
     try {
-      const response = await fetch(`${API_URL}/bugs/${bugId}`, {
-        method: "DELETE",
-      });
+      const response = await fetch(
+        `${API_URL}/projects/${projectId}/bugs/${bugId}`,
+        {
+          method: "DELETE",
+        },
+      );
 
-      if (response.ok) {
-        await fetchAllData();
-      }
+      if (response.ok) await fetchAllData();
     } catch (error) {
       console.error("Błąd usuwania błędu:", error);
     }

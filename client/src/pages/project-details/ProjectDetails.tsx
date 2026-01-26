@@ -18,7 +18,6 @@ import {
   DialogActionTrigger,
   DialogBackdrop,
   DialogPositioner,
-  DialogTrigger,
 } from "@chakra-ui/react";
 import { useProjects, type Bug } from "../../context/ProjectContext";
 import { LuArrowLeft, LuTrash2, LuSearch } from "react-icons/lu";
@@ -78,10 +77,14 @@ export function ProjectDetails() {
   };
 
   const handleDeleteBug = async () => {
-    if (!bugToDelete) return;
+    // POPRAWKA: Sprawdzamy czy mamy błąd do usunięcia ORAZ ID projektu
+    if (!bugToDelete || !project.id) return;
+
     setIsDeletingBug(true);
     try {
-      await deleteBug(bugToDelete.id);
+      // Wywołujemy deleteBug z dwoma argumentami dla klucza kompozytowego
+      await deleteBug(bugToDelete.id, project.id);
+
       toaster.create({
         title: "Bug deleted",
         description: `Removed ${bugToDelete.id} from the list`,
@@ -108,11 +111,13 @@ export function ProjectDetails() {
         </Button>
 
         <DialogRoot role="alertdialog" placement="center">
-          <DialogTrigger asChild>
-            <Button colorPalette="red" variant="ghost">
-              <LuTrash2 />
-            </Button>
-          </DialogTrigger>
+          <Button colorPalette="red" variant="ghost" asChild>
+            <DialogActionTrigger asChild>
+              <Button colorPalette="red" variant="ghost">
+                <LuTrash2 />
+              </Button>
+            </DialogActionTrigger>
+          </Button>
           <DialogBackdrop />
           <DialogPositioner>
             <DialogContent>
@@ -171,7 +176,7 @@ export function ProjectDetails() {
           py="3"
           borderLeftWidth="1px"
           borderRightWidth="1px"
-          borderColor="gray.600"
+          borderColor={{ _light: "gray.200", _dark: "gray.600" }}
         >
           <Text
             fontSize="xs"
@@ -217,76 +222,125 @@ export function ProjectDetails() {
       {/* 3. TABELA BŁĘDÓW */}
       <Box
         border="1px solid"
-        borderColor={{ _light: "gray.100", _dark: "gray.800" }}
+        borderColor={{ _light: "gray.200", _dark: "gray.800" }}
         borderRadius="md"
         overflow="hidden"
+        bg={{ _light: "white", _dark: "gray.900" }}
       >
-        <Table.Root variant="line" size="md">
-          <Table.Header bg="gray.100" _dark={{ bg: "gray.800" }}>
-            <Table.Row>
-              <Table.ColumnHeader>ID</Table.ColumnHeader>
-              <Table.ColumnHeader>Title</Table.ColumnHeader>
-              <Table.ColumnHeader>Priority</Table.ColumnHeader>
-              <Table.ColumnHeader>Device</Table.ColumnHeader>
-              <Table.ColumnHeader>Created At</Table.ColumnHeader>
-              <Table.ColumnHeader textAlign="end">Actions</Table.ColumnHeader>
-            </Table.Row>
-          </Table.Header>
-          <Table.Body>
-            {filteredBugs.map((bug) => (
-              <Table.Row
-                key={bug.id}
-                onClick={() => setSelectedBug(bug)}
-                cursor="pointer"
-                _hover={{ bg: "blue.50", _dark: { bg: "gray.800" } }}
-                transition="background 0.2s"
-              >
-                <Table.Cell fontWeight="bold" width="120px">
-                  {bug.id}
-                </Table.Cell>
-                <Table.Cell fontWeight="medium">{bug.title}</Table.Cell>
-                <Table.Cell>
-                  <Badge
-                    colorPalette={
-                      bug.priority === "High"
-                        ? "red"
-                        : bug.priority === "Medium"
-                          ? "orange"
-                          : "blue"
-                    }
-                    variant="solid"
-                    color="white"
-                  >
-                    {bug.priority}
-                  </Badge>
-                </Table.Cell>
-                <Table.Cell color="gray.500">{bug.device || "---"}</Table.Cell>
-                <Table.Cell color="gray.500" fontSize="sm">
-                  {new Date(bug.createdAt).toLocaleDateString()}
-                </Table.Cell>
-                <Table.Cell textAlign="end">
-                  <Button
-                    size="xs"
-                    variant="ghost"
-                    colorPalette="red"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setBugToDelete(bug);
-                    }}
-                  >
-                    <LuTrash2 />
-                  </Button>
-                </Table.Cell>
+        <Box
+          overflowY="auto"
+          // calc(100vh - 300px) oznacza: 100% wysokości ekranu minus 400px na header i toolbar
+          maxH="calc(100vh - 445px)"
+          minH="300px" // Żeby tabela nie zniknęła na bardzo małych ekranach
+          css={{
+            "&::-webkit-scrollbar": { width: "6px" },
+            "&::-webkit-scrollbar-track": { background: "transparent" },
+            "&::-webkit-scrollbar-thumb": {
+              background: "var(--chakra-colors-gray-400)",
+              borderRadius: "full",
+            },
+            _dark: {
+              "&::-webkit-scrollbar-thumb": {
+                background: "var(--chakra-colors-gray-700)",
+              },
+            },
+          }}
+        >
+          <Table.Root variant="line" size="md" stickyHeader interactive>
+            <Table.Header zIndex="1">
+              <Table.Row bg={{ _light: "gray.50", _dark: "gray.800" }}>
+                <Table.ColumnHeader bg="inherit" fontWeight="bold">
+                  ID
+                </Table.ColumnHeader>
+                <Table.ColumnHeader bg="inherit" fontWeight="bold">
+                  Title
+                </Table.ColumnHeader>
+                <Table.ColumnHeader bg="inherit" fontWeight="bold">
+                  Priority
+                </Table.ColumnHeader>
+                <Table.ColumnHeader bg="inherit" fontWeight="bold">
+                  Device
+                </Table.ColumnHeader>
+                <Table.ColumnHeader bg="inherit" fontWeight="bold">
+                  Created At
+                </Table.ColumnHeader>
+                <Table.ColumnHeader
+                  bg="inherit"
+                  fontWeight="bold"
+                  textAlign="end"
+                >
+                  Actions
+                </Table.ColumnHeader>
               </Table.Row>
-            ))}
-          </Table.Body>
-        </Table.Root>
+            </Table.Header>
 
-        {filteredBugs.length === 0 && (
-          <Box p="20" textAlign="center" color="gray.500">
-            <Text>No bugs reported for this project yet.</Text>
-          </Box>
-        )}
+            <Table.Body>
+              {filteredBugs.length > 0 ? (
+                filteredBugs.map((bug) => (
+                  <Table.Row
+                    key={`${bug.projectId}-${bug.id}`} // Unikalny klucz dla Reacta
+                    onClick={() => setSelectedBug(bug)}
+                    cursor="pointer"
+                    _hover={{ bg: "blue.50", _dark: { bg: "gray.800" } }}
+                    transition="background 0.2s"
+                  >
+                    <Table.Cell
+                      fontWeight="bold"
+                      width="120px"
+                      color="blue.700"
+                      _dark={{ color: "blue.400" }}
+                    >
+                      {bug.id}
+                    </Table.Cell>
+                    <Table.Cell fontWeight="medium">{bug.title}</Table.Cell>
+                    <Table.Cell>
+                      <Badge
+                        colorPalette={
+                          bug.priority === "High"
+                            ? "red"
+                            : bug.priority === "Medium"
+                              ? "orange"
+                              : "blue"
+                        }
+                        variant="solid"
+                        color="white"
+                      >
+                        {bug.priority}
+                      </Badge>
+                    </Table.Cell>
+                    <Table.Cell color="gray.500">
+                      {bug.device || "---"}
+                    </Table.Cell>
+                    <Table.Cell color="gray.500" fontSize="sm">
+                      {new Date(bug.createdAt).toLocaleDateString()}
+                    </Table.Cell>
+                    <Table.Cell textAlign="end">
+                      <Button
+                        size="xs"
+                        variant="ghost"
+                        colorPalette="red"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setBugToDelete(bug);
+                        }}
+                      >
+                        <LuTrash2 />
+                      </Button>
+                    </Table.Cell>
+                  </Table.Row>
+                ))
+              ) : (
+                <Table.Row>
+                  <Table.Cell colSpan={6}>
+                    <Box p="20" textAlign="center" color="gray.500">
+                      <Text>No bugs reported for this project yet.</Text>
+                    </Box>
+                  </Table.Cell>
+                </Table.Row>
+              )}
+            </Table.Body>
+          </Table.Root>
+        </Box>
       </Box>
 
       {/* 4. MODAL SZCZEGÓŁÓW BŁĘDU */}
