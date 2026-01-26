@@ -18,6 +18,7 @@ import {
   DialogActionTrigger,
   DialogBackdrop,
   DialogPositioner,
+  DialogTrigger,
 } from "@chakra-ui/react";
 import { useProjects, type Bug } from "../../context/ProjectContext";
 import { LuArrowLeft, LuTrash2, LuSearch } from "react-icons/lu";
@@ -111,13 +112,11 @@ export function ProjectDetails() {
         </Button>
 
         <DialogRoot role="alertdialog" placement="center">
-          <Button colorPalette="red" variant="ghost" asChild>
-            <DialogActionTrigger asChild>
-              <Button colorPalette="red" variant="ghost">
-                <LuTrash2 />
-              </Button>
-            </DialogActionTrigger>
-          </Button>
+          <DialogTrigger asChild>
+            <Button colorPalette="red" variant="ghost">
+              <LuTrash2 />
+            </Button>
+          </DialogTrigger>
           <DialogBackdrop />
           <DialogPositioner>
             <DialogContent>
@@ -225,13 +224,13 @@ export function ProjectDetails() {
         borderColor={{ _light: "gray.200", _dark: "gray.800" }}
         borderRadius="md"
         overflow="hidden"
+        // Ustawiamy tło główne na białe/ciemne, aby pusta przestrzeń nie była szara
         bg={{ _light: "white", _dark: "gray.900" }}
       >
         <Box
           overflowY="auto"
-          // calc(100vh - 300px) oznacza: 100% wysokości ekranu minus 400px na header i toolbar
           maxH="calc(100vh - 445px)"
-          minH="300px" // Żeby tabela nie zniknęła na bardzo małych ekranach
+          minH="100px"
           css={{
             "&::-webkit-scrollbar": { width: "6px" },
             "&::-webkit-scrollbar-track": { background: "transparent" },
@@ -248,6 +247,7 @@ export function ProjectDetails() {
         >
           <Table.Root variant="line" size="md" stickyHeader interactive>
             <Table.Header zIndex="1">
+              {/* Tylko wiersz nagłówka ma szary odcień */}
               <Table.Row bg={{ _light: "gray.50", _dark: "gray.800" }}>
                 <Table.ColumnHeader bg="inherit" fontWeight="bold">
                   ID
@@ -274,14 +274,14 @@ export function ProjectDetails() {
               </Table.Row>
             </Table.Header>
 
-            <Table.Body>
+            <Table.Body bg="inherit">
               {filteredBugs.length > 0 ? (
                 filteredBugs.map((bug) => (
                   <Table.Row
-                    key={`${bug.projectId}-${bug.id}`} // Unikalny klucz dla Reacta
+                    key={`${bug.projectId}-${bug.id}`}
                     onClick={() => setSelectedBug(bug)}
                     cursor="pointer"
-                    _hover={{ bg: "blue.50", _dark: { bg: "gray.800" } }}
+                    _hover={{ bg: "blue.50", _dark: { bg: "gray.900" } }}
                     transition="background 0.2s"
                   >
                     <Table.Cell
@@ -331,7 +331,7 @@ export function ProjectDetails() {
                 ))
               ) : (
                 <Table.Row>
-                  <Table.Cell colSpan={6}>
+                  <Table.Cell colSpan={6} p="0">
                     <Box p="20" textAlign="center" color="gray.500">
                       <Text>No bugs reported for this project yet.</Text>
                     </Box>

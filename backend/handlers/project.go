@@ -41,18 +41,17 @@ func CreateProject(db *gorm.DB) gin.HandlerFunc {
 // DeleteProject usuwa projekt (błędy zostaną usunięte kaskadowo dzięki gorm:constraint)
 func DeleteProject(db *gorm.DB) gin.HandlerFunc {
     return func(c *gin.Context) {
-        id := c.Param("id")
+        // ZMIANA: "id" -> "projectId" (musi być identycznie jak w api.DELETE("/projects/:projectId", ...))
+        projectId := c.Param("projectId")
 
-        // 1. Uruchamiamy transakcję, aby mieć pewność, że albo usuniemy wszystko, albo nic
         err := db.Transaction(func(tx *gorm.DB) error {
-            // 2. Najpierw usuwamy błędy przypisane do projektu
-            if err := tx.Unscoped().Where("project_id = ?", id).Delete(&models.Bug{}).Error; err != nil {
+            // Usuwamy błędy
+            if err := tx.Unscoped().Where("project_id = ?", projectId).Delete(&models.Bug{}).Error; err != nil {
                 return err
             }
 
-            // 3. Potem usuwamy sam projekt
-            // Używamy .Unscoped(), bo gorm.Model używa Soft Delete, co mogłoby zostawić "ducha" w bazie
-            result := tx.Unscoped().Where("id = ?", id).Delete(&models.Project{})
+            // Usuwamy projekt
+            result := tx.Unscoped().Where("id = ?", projectId).Delete(&models.Project{})
             
             if result.Error != nil {
                 return result.Error
