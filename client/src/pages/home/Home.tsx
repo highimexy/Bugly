@@ -9,7 +9,7 @@ export function Home() {
   const navigate = useNavigate();
   const { projects } = useProjects();
 
-  // WIDOK: BRAK PROJEKTÓW
+  // WIDOK: BRAK PROJEKTÓW (Bez zmian)
   if (projects.length === 0) {
     return (
       <Stack
@@ -61,6 +61,24 @@ export function Home() {
       position="relative"
       flex="1"
       p="1"
+      // --- KLUCZOWE ZMIANY DLA SCROLLOWANIA ---
+      overflowY="auto"
+      maxH="calc(100vh - 260px)" // Dostosuj 120px do wysokości Twojego Header/Paddingu
+      pr="2" // Padding z prawej, żeby scrollbar nie nachodził na karty
+      css={{
+        "&::-webkit-scrollbar": { width: "6px" },
+        "&::-webkit-scrollbar-track": { background: "transparent" },
+        "&::-webkit-scrollbar-thumb": {
+          background: "var(--chakra-colors-gray-300)",
+          borderRadius: "full",
+        },
+        _dark: {
+          "&::-webkit-scrollbar-thumb": {
+            background: "var(--chakra-colors-gray-700)",
+          },
+        },
+      }}
+      // ---------------------------------------
       _before={{
         content: '""',
         position: "absolute",
@@ -70,6 +88,7 @@ export function Home() {
         bottom: 0,
         bgImage: `url(${projectsBgImg})`,
         bgSize: "cover",
+        bgAttachment: "fixed", // Tło zostaje w miejscu podczas scrollowania
         filter: "grayscale(100%)",
         opacity: "0.15",
         zIndex: 0,
@@ -81,6 +100,7 @@ export function Home() {
         gap="6"
         position="relative"
         zIndex={1}
+        pb="10" // Dodatkowy padding na dole, żeby ostatni rząd nie dotykał krawędzi
       >
         {projects.map((project) => (
           <Box
@@ -99,7 +119,8 @@ export function Home() {
             _hover={{
               bg: "gray.50",
               _dark: { bg: "gray.800" },
-              transform: "translateY(-2px)",
+              transform: "translateY(-4px)", // Nieco mocniejszy efekt
+              boxShadow: "md",
             }}
             transition="all 0.2s ease-in-out"
             cursor="pointer"
@@ -111,27 +132,33 @@ export function Home() {
                 {project.name.charAt(0).toUpperCase()}
               </Text>
             </Circle>
-            <Text fontWeight="semibold">{project.name}</Text>
+            <Text fontWeight="semibold" truncate maxW="full">
+              {project.name}
+            </Text>
           </Box>
         ))}
 
-        {/* Przycisk dodawania kolejnego projektu wewnątrz siatki */}
+        {/* Przycisk dodawania kolejnego projektu */}
         <Box
           as="button"
           onClick={() => navigate("/create-project")}
           border="2px dashed"
-          borderColor="gray.200"
-          _dark={{ borderColor: "gray.700" }}
+          borderColor="gray.300"
+          _dark={{ borderColor: "gray.600" }}
           borderRadius="2xl"
           display="flex"
           alignItems="center"
           justifyContent="center"
           cursor="pointer"
-          minH="140px"
-          _hover={{ bg: "white", _dark: { bg: "gray.800" } }}
+          minH="150px"
+          _hover={{
+            bg: "white",
+            borderColor: "blue.500",
+            _dark: { bg: "gray.800", borderColor: "blue.400" },
+          }}
           transition="all 0.2s ease-in-out"
         >
-          <LuPlus size="24px" color="gray" />
+          <LuPlus size="32px" color="gray" />
         </Box>
       </SimpleGrid>
     </Box>

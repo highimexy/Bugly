@@ -10,12 +10,39 @@ import {
 import { LuSettings, LuPlus, LuFolder, LuLogOut } from "react-icons/lu";
 import { useNavigate, Outlet, useLocation, useParams } from "react-router-dom";
 import { useProjects } from "../../context/ProjectContext";
+import { useState, useEffect } from "react";
 
 export function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { id } = useParams();
   const { projects } = useProjects();
+
+  // 1. Inicjalizacja stanu ostatnio klikniętych projektów z localStorage
+  const [recentIds, setRecentIds] = useState<string[]>(() => {
+    const saved = localStorage.getItem("recentProjects");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // 2. Efekt śledzący zmiany ID w URL i aktualizujący listę
+  useEffect(() => {
+    if (id) {
+      setRecentIds((prev) => {
+        // Usuwamy obecne ID z listy (jeśli istnieje), aby dodać je na sam początek
+        const filtered = prev.filter((recentId) => recentId !== id);
+        // Dodajemy nowe ID na start i ucinamy do 10 pozycji
+        const updated = [id, ...filtered].slice(0, 10);
+
+        localStorage.setItem("recentProjects", JSON.stringify(updated));
+        return updated;
+      });
+    }
+  }, [id]);
+
+  // 3. Mapowanie ID na pełne obiekty projektów (filtrujemy te, które mogły zostać usunięte)
+  const recentProjects = recentIds
+    .map((recentId) => projects.find((p) => p.id === recentId))
+    .filter((p): p is any => p !== undefined);
 
   const getPageHeader = () => {
     if (location.pathname.startsWith("/project/")) {
@@ -68,7 +95,7 @@ export function DashboardLayout() {
           <NavItem icon={<LuSettings />} label="Settings" />
         </Stack>
 
-        <Box mb="6">
+        <Box mb="6" overflow="hidden">
           <Flex align="center" justify="space-between" mb="3" px="3">
             <Text
               fontSize="xs"
@@ -76,7 +103,7 @@ export function DashboardLayout() {
               color="gray.500"
               textTransform="uppercase"
             >
-              Active Projects
+              Recent Projects
             </Text>
             <LuPlus
               size="14px"
@@ -85,15 +112,21 @@ export function DashboardLayout() {
             />
           </Flex>
           <Stack gap="1">
-            {projects.map((project) => (
-              <ProjectLink
-                key={project.id}
-                id={project.id}
-                label={project.name}
-                color={project.color}
-                isActive={id === project.id}
-              />
-            ))}
+            {recentProjects.length > 0 ? (
+              recentProjects.map((project) => (
+                <ProjectLink
+                  key={project.id}
+                  id={project.id}
+                  label={project.name}
+                  color={project.color}
+                  isActive={id === project.id}
+                />
+              ))
+            ) : (
+              <Text px="3" fontSize="xs" color="gray.400" fontStyle="italic">
+                No recent projects visited
+              </Text>
+            )}
           </Stack>
         </Box>
 
@@ -125,6 +158,7 @@ export function DashboardLayout() {
             display="flex"
             flexDirection="column"
             p="10"
+            overflow="hidden" // Ważne dla Twojej paginacji/scrolla w Home
           >
             <Outlet />
           </Box>
@@ -190,8 +224,10 @@ function ProjectLink({ label, color, id, isActive }: any) {
         textDecoration: "none",
       }}
     >
-      <Box borderRadius="full" bg={color} w="8px" h="8px" />
-      <Text fontWeight={isActive ? "bold" : "normal"}>{label}</Text>
+      <Box borderRadius="full" bg={color} w="8px" h="8px" flexShrink={0} />
+      <Text fontWeight={isActive ? "bold" : "normal"} truncate>
+        {label}
+      </Text>
     </Link>
   );
 }

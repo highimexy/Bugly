@@ -177,7 +177,12 @@ export function ProjectShareView() {
         </Table.Root>
 
         {projectBugs.length === 0 && (
-          <Box p="20" textAlign="center" color="gray.500">
+          <Box
+            p="20"
+            textAlign="center"
+            color="gray.500"
+            bg={{ _light: "white", _dark: "gray.900" }}
+          >
             <Text>No bugs have been reported for this project yet.</Text>
           </Box>
         )}
