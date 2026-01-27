@@ -8,13 +8,13 @@ import { Box } from "@chakra-ui/react";
 import { ToggleColorMode } from "./components/ui/ToggleColorMode";
 import { ProjectProvider } from "./context/ProjectContext";
 import { ProjectDetails } from "./pages/project-details/ProjectDetails";
-import { Toaster } from "@/components/ui/toaster"; // Importuj Toaster ze swoich snippetów
+import { Toaster } from "@/components/ui/toaster";
+import { ProjectShareView } from "./pages/project-share-view/ProjectShareView";
 
 function App() {
   return (
     <ProjectProvider>
       <BrowserRouter>
-        {/* Toaster musi być wewnątrz Providera (ProjectProvider/ChakraProvider) */}
         <Toaster />
 
         <Box position="fixed" top="4" right="4" zIndex="1000">
@@ -34,6 +34,7 @@ function App() {
           </Route>
 
           <Route path="*" element={<Navigate to="/home" replace />} />
+          <Route path="/share/:id" element={<ProjectShareView />} />
         </Routes>
       </BrowserRouter>
     </ProjectProvider>

@@ -26,3 +26,5 @@ Bugly is a high-performance system designed for internal teams to manage and del
 
 - [Database Schema](https://dbdiagram.io/d/Bugly-6957e52c39fa3db27bf936b4)
 - [API Documentation](#)
+
+//go run cmd/create_user.go

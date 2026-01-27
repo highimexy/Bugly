@@ -103,12 +103,26 @@ export function ProjectDetails() {
     }
   };
 
+  const handleShare = () => {
+    const shareUrl = `${window.location.origin}/share/${project.id}`;
+    navigator.clipboard.writeText(shareUrl);
+    toaster.create({
+      title: "Link copied!",
+      description: "You can now send this link to your client.",
+      type: "success",
+    });
+  };
+
   return (
     <Box>
       {/* 1. HEADER: Nawigacja i Usuwanie projektu */}
       <Flex justify="space-between" align="center" mb="8">
         <Button variant="ghost" onClick={() => navigate("/home")}>
           <LuArrowLeft /> Back to Projects
+        </Button>
+
+        <Button variant="outline" size="sm" onClick={handleShare}>
+          Share with Client
         </Button>
 
         <DialogRoot role="alertdialog" placement="center">
@@ -248,7 +262,7 @@ export function ProjectDetails() {
           <Table.Root variant="line" size="md" stickyHeader interactive>
             <Table.Header zIndex="1">
               {/* Tylko wiersz nagłówka ma szary odcień */}
-              <Table.Row bg={{ _light: "gray.50", _dark: "gray.800" }}>
+              <Table.Row bg={{ _light: "gray.50", _dark: "gray.900" }}>
                 <Table.ColumnHeader bg="inherit" fontWeight="bold">
                   ID
                 </Table.ColumnHeader>
