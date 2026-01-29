@@ -37,6 +37,17 @@ export function BugDetailsModal({ bug, onClose }: Props) {
   // GUARD CLAUSE: Jeśli nie wybrano błędu, nie renderujemy nic (modal jest ukryty).
   if (!bug) return null;
 
+  // FUNKCJA POMOCNICZA: NAPRAWIANIE LINKÓW
+  // Jeśli link nie zaczyna się od http/https, dodajemy https:// na początku.
+  // Dzięki temu przeglądarka wie, że to zewnętrzna strona.
+  const getValidUrl = (url: string) => {
+    if (!url) return "";
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      return url;
+    }
+    return `https://${url}`;
+  };
+
   return (
     // KONTROLER MODALA
     // 'open={!!bug}' konwertuje obiekt na boolean -> true jeśli bug istnieje.
@@ -231,8 +242,9 @@ export function BugDetailsModal({ bug, onClose }: Props) {
               {bug.screenshotUrl && (
                 <Box>
                   <Link
-                    href={bug.screenshotUrl}
+                    href={getValidUrl(bug.screenshotUrl)}
                     target="_blank"
+                    rel="noopener noreferrer"
                     p="3"
                     display="flex"
                     alignItems="center"
