@@ -87,7 +87,7 @@ export function Auth() {
 
           {/* KONTENER FORMULARZA */}
           <Box
-            bg={{ _light: "white", _dark: "gray.800" }}
+            bg={{ _light: "white", _dark: "gray.900" }}
             p={{ base: "6", md: "10" }}
             borderRadius="2xl"
             borderWidth="1px"
@@ -104,6 +104,7 @@ export function Auth() {
                   size="lg"
                   h="12"
                   disabled={loginMutation.isPending}
+                  bg={{ _light: "gray.100", _dark: "black" }}
                 />
               </Field>
 
@@ -117,6 +118,7 @@ export function Auth() {
                   size="lg"
                   h="12"
                   disabled={loginMutation.isPending}
+                  bg={{ _light: "gray.100", _dark: "black" }}
                   // UX Improvement: Pozwala na zatwierdzenie enterem
                   onKeyDown={(e) => e.key === "Enter" && handleLogin()}
                 />
