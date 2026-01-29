@@ -21,7 +21,9 @@ export function Auth() {
   // Automatycznie zarządza stanami: isPending (ładowanie), isError, isSuccess.
   const loginMutation = useMutation({
     mutationFn: async () => {
-      const response = await axios.post("http://localhost:8081/api/login", {
+      const apiUrl =
+        import.meta.env.VITE_API_URL || "http://localhost:8081/api";
+      const response = await axios.post(`${apiUrl}/login`, {
         email,
         password,
       });

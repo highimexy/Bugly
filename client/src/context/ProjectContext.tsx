@@ -44,7 +44,7 @@ interface ProjectContextType {
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 
-const API_URL = "http://localhost:8081/api";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8081/api";
 
 // GLOBALNY DOSTAWCA STANU (PROVIDER)
 // Zarządza stanem projektów i błędów, oraz komunikacją z REST API.
