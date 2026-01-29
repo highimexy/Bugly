@@ -12,19 +12,28 @@ import { useNavigate, Outlet, useLocation, useParams } from "react-router-dom";
 import { useProjects } from "../../context/ProjectContext";
 import { useState, useEffect } from "react";
 
+// GŁÓWNY LAYOUT APLIKACJI (DASHBOARD)
+// Odpowiada za strukturę szkieletową widoków administracyjnych.
+// Zawiera stały pasek boczny (Sidebar) oraz dynamiczny obszar roboczy (Content Area) renderowany przez <Outlet />.
 export function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { id } = useParams();
   const { projects } = useProjects();
 
-  // 1. Inicjalizacja stanu ostatnio klikniętych projektów z localStorage
+  // 1. ZARZĄDZANIE HISTORIĄ PRZEGLĄDANIA (PERSISTENCE)
+  // Inicjalizacja stanu na podstawie danych z localStorage, co zapewnia zachowanie
+  // listy "Ostatnich projektów" nawet po odświeżeniu strony lub restarcie przeglądarki.
   const [recentIds, setRecentIds] = useState<string[]>(() => {
     const saved = localStorage.getItem("recentProjects");
     return saved ? JSON.parse(saved) : [];
   });
 
-  // 2. Efekt śledzący zmiany ID w URL i aktualizujący listę
+  // 2. LOGIKA AKTUALIZACJI HISTORII (FIFO QUEUE)
+  // Efekt uruchamiany przy zmianie ID w URL. Implementuje logikę kolejki:
+  // - Usuwa duplikaty (jeśli projekt był już na liście).
+  // - Dodaje bieżący projekt na początek listy.
+  // - Ogranicza historię do 10 ostatnich elementów.
   useEffect(() => {
     if (id) {
       setRecentIds((prev) => {
@@ -39,11 +48,16 @@ export function DashboardLayout() {
     }
   }, [id]);
 
-  // 3. Mapowanie ID na pełne obiekty projektów (filtrujemy te, które mogły zostać usunięte)
+  // 3. TRANSFORMACJA DANYCH I BEZPIECZEŃSTWO
+  // Mapowanie zapisanych ID na pełne obiekty projektów z Context API.
+  // Filtrowanie (p !== undefined) zabezpiecza przed błędami renderowania w przypadku,
+  // gdy projekt z historii został w międzyczasie usunięty z bazy danych.
   const recentProjects = recentIds
     .map((recentId) => projects.find((p) => p.id === recentId))
     .filter((p): p is any => p !== undefined);
 
+  // DYNAMICZNY NAGŁÓWEK STRONY
+  // Funkcja pomocnicza ustalająca tytuł i opis w zależności od aktywnej ścieżki routingu.
   const getPageHeader = () => {
     if (location.pathname.startsWith("/project/")) {
       const currentProject = projects.find((p) => p.id === id);
@@ -66,6 +80,8 @@ export function DashboardLayout() {
 
   return (
     <Flex minH="100vh" bg="mainBg">
+      {/* SEKCJA 1: PASEK BOCZNY (SIDEBAR) */}
+      {/* Element pozycjonowany jako 'sticky', zapewniający stały dostęp do nawigacji. */}
       <Box
         as="nav"
         width="280px"
@@ -79,12 +95,14 @@ export function DashboardLayout() {
         top="0"
         h="100vh"
       >
+        {/* LOGO MARKI */}
         <Flex justify="center" mb="6">
           <Text fontFamily={"archivo black"} fontSize="4xl" color="blue.500">
             Bugly
           </Text>
         </Flex>
 
+        {/* GŁÓWNA NAWIGACJA */}
         <Stack gap="1" mb="8">
           <NavItem
             icon={<LuFolder />}
@@ -95,6 +113,8 @@ export function DashboardLayout() {
           <NavItem icon={<LuSettings />} label="Settings" />
         </Stack>
 
+        {/* SEKCJA OSTATNICH PROJEKTÓW */}
+        {/* Wyświetla listę dynamicznie generowaną na podstawie historii użytkownika */}
         <Box mb="6" overflow="hidden">
           <Flex align="center" justify="space-between" mb="3" px="3">
             <Text
@@ -111,6 +131,7 @@ export function DashboardLayout() {
               onClick={() => navigate("/create-project")}
             />
           </Flex>
+
           <Stack gap="1">
             {recentProjects.length > 0 ? (
               recentProjects.map((project) => (
@@ -123,6 +144,7 @@ export function DashboardLayout() {
                 />
               ))
             ) : (
+              // Stan pusty dla historii
               <Text px="3" fontSize="xs" color="gray.400" fontStyle="italic">
                 No recent projects visited
               </Text>
@@ -131,6 +153,7 @@ export function DashboardLayout() {
         </Box>
 
         <Spacer />
+        {/* AKCJE STOPKI (WYLOGOWANIE) */}
         <NavItem
           icon={<LuLogOut />}
           label="Log out"
@@ -139,8 +162,10 @@ export function DashboardLayout() {
         />
       </Box>
 
+      {/* SEKCJA 2: GŁÓWNY OBSZAR ROBOCZY (CONTENT AREA) */}
       <Box flex="1" p="10" display="flex" flexDirection="column" h="100vh">
         <Stack gap="6" flex="1">
+          {/* NAGŁÓWEK WIDOKU */}
           <Box>
             <Heading size="3xl" fontWeight="semibold">
               {title}
@@ -149,6 +174,9 @@ export function DashboardLayout() {
               {subtitle}
             </Text>
           </Box>
+
+          {/* KONTENER TREŚCI (OUTLET) */}
+          {/* Renderuje odpowiedni komponent podstrony (Home, ProjectDetails itp.) */}
           <Box
             flex="1"
             borderRadius="md"
@@ -158,7 +186,7 @@ export function DashboardLayout() {
             display="flex"
             flexDirection="column"
             p="10"
-            overflow="hidden" // Ważne dla Twojej paginacji/scrolla w Home
+            overflow="hidden" // Kluczowe dla niezależnego scrollowania wewnątrz widoków (np. Home Grid)
           >
             <Outlet />
           </Box>
@@ -168,6 +196,8 @@ export function DashboardLayout() {
   );
 }
 
+// KOMPONENT POMOCNICZY: ELEMENT NAWIGACJI
+// Obsługuje stany aktywne i hover dla linków w pasku bocznym.
 function NavItem({ icon, label, active, color, onClick }: any) {
   return (
     <Link
@@ -200,6 +230,8 @@ function NavItem({ icon, label, active, color, onClick }: any) {
   );
 }
 
+// KOMPONENT POMOCNICZY: LINK PROJEKTU
+// Dedykowany komponent dla listy projektów, zawierający wskaźnik koloru (kropka).
 function ProjectLink({ label, color, id, isActive }: any) {
   const navigate = useNavigate();
 

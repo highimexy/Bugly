@@ -13,20 +13,29 @@ import {
 import { useProjects, type Bug } from "../../context/ProjectContext";
 import { BugDetailsModal } from "../../components/BugDetailsModal";
 
+// KOMPONENT WIDOKU DLA KLIENTA (READ-ONLY)
+// Służy do udostępniania postępów prac osobom z zewnątrz (np. klientom),
+// oferując uproszczony interfejs bez możliwości edycji czy usuwania danych.
 export function ProjectShareView() {
   const { id } = useParams();
+
+  // 1. INTEGRACJA Z GLOBALNYM STANEM APLIKACJI
+  // Pobieramy pełną listę projektów i błędów z Context API.
   const { projects, bugs, isLoading } = useProjects();
 
-  // State to hold the bug selected by the client
+  // 2. LOKALNY STAN WIDOKU
+  // 'selectedBug': Kontroluje wyświetlanie modala ze szczegółami.
+  // 'doneBugs': Przechowuje listę ID zadań "odfajkowanych" przez klienta w bieżącej sesji (zmiana wizualna).
   const [selectedBug, setSelectedBug] = useState<Bug | null>(null);
-
-  // NOWE: Lokalny stan dla zaznaczonych błędów
   const [doneBugs, setDoneBugs] = useState<string[]>([]);
 
+  // 3. FILTROWANIE DANYCH
+  // Wyodrębniamy dane specyficzne dla aktualnie przeglądanego projektu na podstawie URL ID.
   const project = projects.find((p) => p.id === id);
   const projectBugs = bugs.filter((b) => b.projectId === id);
 
-  // NOWE: Funkcja przełączania statusu
+  // LOGIKA BIZNESOWA: PRZEŁĄCZANIE STATUSU (LOCAL ONLY)
+  // Funkcja dodaje lub usuwa ID błędu z tablicy 'doneBugs', co steruje przekreśleniem wiersza.
   const toggleDone = (bugId: string) => {
     setDoneBugs((prev) =>
       prev.includes(bugId)
@@ -35,6 +44,7 @@ export function ProjectShareView() {
     );
   };
 
+  // OBSŁUGA STANU ŁADOWANIA
   if (isLoading) {
     return (
       <Flex h="100vh" align="center" justify="center">
@@ -44,6 +54,7 @@ export function ProjectShareView() {
     );
   }
 
+  // OBSŁUGA BŁĘDÓW (404)
   if (!project)
     return (
       <Box p="10">
@@ -53,7 +64,8 @@ export function ProjectShareView() {
 
   return (
     <Container maxW="container.xl" py="10">
-      {/* Header */}
+      {/* SEKCJA NAGŁÓWKA */}
+      {/* Wyświetla nazwę projektu oraz sumaryczną liczbę zgłoszonych problemów */}
       <Flex
         justify="space-between"
         align="center"
@@ -72,7 +84,7 @@ export function ProjectShareView() {
         </Badge>
       </Flex>
 
-      {/* Table */}
+      {/* SEKCJA GŁÓWNA: TABELA DANYCH */}
       <Box
         border="1px solid"
         borderColor={{ _light: "gray.200", _dark: "gray.800" }}
@@ -92,7 +104,7 @@ export function ProjectShareView() {
               <Table.ColumnHeader fontWeight="bold">
                 Created At
               </Table.ColumnHeader>
-              {/* NOWE: Nagłówek dla statusu */}
+              {/* Kolumna akcji dla klienta (Status Checkbox) */}
               <Table.ColumnHeader fontWeight="bold" textAlign="end">
                 Status
               </Table.ColumnHeader>
@@ -100,27 +112,31 @@ export function ProjectShareView() {
           </Table.Header>
           <Table.Body>
             {projectBugs.map((bug) => {
-              const isDone = doneBugs.includes(bug.id); // Sprawdzamy czy zaznaczony
+              // Sprawdzamy, czy dany wiersz ma być wygaszony/przekreślony
+              const isDone = doneBugs.includes(bug.id);
 
               return (
                 <Table.Row
                   key={bug.id}
-                  onClick={() => setSelectedBug(bug)} // Opens details on click
+                  onClick={() => setSelectedBug(bug)}
                   cursor="pointer"
-                  opacity={isDone ? 0.5 : 1} // Efekt wizualny
+                  // Wizualny feedback: zmniejszona przezroczystość dla zadań wykonanych
+                  opacity={isDone ? 0.5 : 1}
                   _hover={{ bg: { _light: "gray.50", _dark: "gray.800" } }}
                 >
                   <Table.Cell
                     fontWeight="bold"
                     color="blue.600"
                     _dark={{ color: "blue.400" }}
-                    textDecoration={isDone ? "line-through" : "none"} // Przekreślenie
+                    // Przekreślenie ID, jeśli zadanie jest 'DONE'
+                    textDecoration={isDone ? "line-through" : "none"}
                   >
                     {bug.id}
                   </Table.Cell>
                   <Table.Cell
                     fontWeight="medium"
-                    textDecoration={isDone ? "line-through" : "none"} // Przekreślenie
+                    // Przekreślenie tytułu dla spójności wizualnej
+                    textDecoration={isDone ? "line-through" : "none"}
                   >
                     {bug.title}
                   </Table.Cell>
@@ -144,9 +160,11 @@ export function ProjectShareView() {
                   <Table.Cell color="gray.500" fontSize="sm">
                     {new Date(bug.createdAt).toLocaleDateString()}
                   </Table.Cell>
-                  {/* NOWE: Komórka z inputem */}
+
+                  {/* KOMÓRKA INTERAKTYWNA: CHECKBOX */}
                   <Table.Cell
                     textAlign="end"
+                    // Zapobiegamy propagacji, aby kliknięcie w checkbox nie otwierało modala
                     onClick={(e) => e.stopPropagation()}
                   >
                     <Flex align="center" justify="flex-end" gap="2">
@@ -157,6 +175,7 @@ export function ProjectShareView() {
                       >
                         {isDone ? "DONE" : "TODO"}
                       </Text>
+                      {/* Natywny input dla pewności stylowania accent-color */}
                       <input
                         type="checkbox"
                         checked={isDone}
@@ -176,6 +195,7 @@ export function ProjectShareView() {
           </Table.Body>
         </Table.Root>
 
+        {/* STAN PUSTY: Wyświetlany, gdy lista błędów jest pusta */}
         {projectBugs.length === 0 && (
           <Box
             p="20"
@@ -188,7 +208,7 @@ export function ProjectShareView() {
         )}
       </Box>
 
-      {/* DETAILS MODAL - Reusing your existing component */}
+      {/* MODAL SZCZEGÓŁÓW: Reużywalny komponent do wyświetlania pełnych informacji */}
       <BugDetailsModal bug={selectedBug} onClose={() => setSelectedBug(null)} />
     </Container>
   );

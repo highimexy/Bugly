@@ -26,29 +26,42 @@ import { CreateBugModal } from "../../components/CreateBugModal";
 import { BugDetailsModal } from "../../components/BugDetailsModal";
 import { toaster } from "@/components/ui/toaster";
 
+// KOMPONENT SZCZEGÓŁÓW PROJEKTU (ADMIN VIEW)
+// Centralny widok zarządczy dla konkretnego projektu. Umożliwia przeglądanie listy zgłoszeń,
+// dodawanie nowych błędów, usuwanie ich oraz zarządzanie samym projektem (usuwanie/udostępnianie).
 export function ProjectDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+
+  // 1. ZARZĄDZANIE STANEM I DANYMI GLOBALNYMI
+  // Pobieramy funkcje CRUD oraz listy danych z kontekstu aplikacji.
   const { projects, deleteProject, bugs, deleteBug } = useProjects();
 
-  // STANY
+  // 2. LOKALNY STAN INTERFEJSU
+  // 'searchTerm': Obsługa filtrowania tabeli w czasie rzeczywistym.
+  // 'confirmDelete': Stan inputa weryfikującego intencję usunięcia projektu (wymaga wpisania "DELETE").
+  // 'selectedBug': Kontroluje wyświetlanie modala ze szczegółami zgłoszenia.
   const [searchTerm, setSearchTerm] = useState("");
   const [confirmDelete, setConfirmDelete] = useState("");
   const [selectedBug, setSelectedBug] = useState<Bug | null>(null);
 
-  // STANY DLA MODALI I LOADINGU
+  // STANY DLA OPERACJI KRYTYCZNYCH (USUWANIE)
   const [bugToDelete, setBugToDelete] = useState<Bug | null>(null);
   const [isDeletingProject, setIsDeletingProject] = useState(false);
   const [isDeletingBug, setIsDeletingBug] = useState(false);
 
-  // LOGIKA DANYCH
+  // 3. LOGIKA FILTROWANIA DANYCH
+  // Znajdujemy aktualny projekt i filtrujemy listę wszystkich błędów,
+  // aby pokazać tylko te przypisane do bieżącego widoku.
   const project = projects.find((p) => p.id === id);
   const projectBugs = bugs.filter((b) => b.projectId === id);
 
+  // Zastosowanie filtra wyszukiwania po tytule (case-insensitive)
   const filteredBugs = projectBugs.filter((b) =>
     b.title.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
+  // ZABEZPIECZENIE: Obsługa przypadku, gdy projekt nie istnieje (np. błędny URL)
   if (!project)
     return (
       <Box p="10">
@@ -56,6 +69,9 @@ export function ProjectDetails() {
       </Box>
     );
 
+  // OBSŁUGA USUWANIA PROJEKTU
+  // Operacja nieodwracalna usuwająca projekt i kaskadowo powiązane błędy.
+  // Po sukcesie następuje przekierowanie do Dashboardu.
   const handleDeleteProject = async () => {
     setIsDeletingProject(true);
     try {
@@ -77,13 +93,12 @@ export function ProjectDetails() {
     }
   };
 
+  // OBSŁUGA USUWANIA POJEDYNCZEGO ZGŁOSZENIA
   const handleDeleteBug = async () => {
-    // POPRAWKA: Sprawdzamy czy mamy błąd do usunięcia ORAZ ID projektu
     if (!bugToDelete || !project.id) return;
 
     setIsDeletingBug(true);
     try {
-      // Wywołujemy deleteBug z dwoma argumentami dla klucza kompozytowego
       await deleteBug(bugToDelete.id, project.id);
 
       toaster.create({
@@ -103,6 +118,8 @@ export function ProjectDetails() {
     }
   };
 
+  // FUNKCJA UDOSTĘPNIANIA (SHARE)
+  // Generuje link do widoku klienta (read-only) i kopiuje go do schowka systemowego.
   const handleShare = () => {
     const shareUrl = `${window.location.origin}/share/${project.id}`;
     navigator.clipboard.writeText(shareUrl);
@@ -115,7 +132,7 @@ export function ProjectDetails() {
 
   return (
     <Box>
-      {/* 1. HEADER: Nawigacja i Usuwanie projektu */}
+      {/* 1. HEADER: SEKCYJNA NAWIGACJA I AKCJE GŁÓWNE */}
       <Flex justify="space-between" align="center" mb="8">
         <Button variant="ghost" onClick={() => navigate("/home")}>
           <LuArrowLeft /> Back to Projects
@@ -125,6 +142,7 @@ export function ProjectDetails() {
           Share with Client
         </Button>
 
+        {/* DIALOG POTWIERDZENIA USUNIĘCIA PROJEKTU (STREFA NIEBEZPIECZNA) */}
         <DialogRoot role="alertdialog" placement="center">
           <DialogTrigger asChild>
             <Button colorPalette="red" variant="ghost">
@@ -168,7 +186,8 @@ export function ProjectDetails() {
         </DialogRoot>
       </Flex>
 
-      {/* 2. TOOLBAR: Statystyki i Szukajka */}
+      {/* 2. TOOLBAR: PASEK NARZĘDZIOWY */}
+      {/* Zawiera: Przycisk dodawania (Modal), licznik błędów oraz wyszukiwarkę */}
       <Flex
         gap="0"
         mb="8"
@@ -177,8 +196,7 @@ export function ProjectDetails() {
         borderRadius="md"
         align="center"
         borderWidth="1px"
-        borderColor="gray.100"
-        _dark={{ borderColor: "gray.800" }}
+        borderColor={{ _light: "gray.200", _dark: "gray.800" }}
       >
         <Box px="6" py="3" borderColor="gray.200">
           <CreateBugModal projectId={project.id} />
@@ -232,15 +250,15 @@ export function ProjectDetails() {
         </Box>
       </Flex>
 
-      {/* 3. TABELA BŁĘDÓW */}
+      {/* 3. TABELA DANYCH (DATA GRID) */}
       <Box
         border="1px solid"
         borderColor={{ _light: "gray.200", _dark: "gray.800" }}
         borderRadius="md"
         overflow="hidden"
-        // Ustawiamy tło główne na białe/ciemne, aby pusta przestrzeń nie była szara
         bg={{ _light: "white", _dark: "gray.900" }}
       >
+        {/* Kontener scrollowalny z dynamiczną wysokością */}
         <Box
           overflowY="auto"
           maxH="calc(100vh - 445px)"
@@ -261,7 +279,6 @@ export function ProjectDetails() {
         >
           <Table.Root variant="line" size="md" stickyHeader interactive>
             <Table.Header zIndex="1">
-              {/* Tylko wiersz nagłówka ma szary odcień */}
               <Table.Row bg={{ _light: "gray.50", _dark: "gray.900" }}>
                 <Table.ColumnHeader bg="inherit" fontWeight="bold">
                   ID
@@ -334,7 +351,7 @@ export function ProjectDetails() {
                         variant="ghost"
                         colorPalette="red"
                         onClick={(e) => {
-                          e.stopPropagation();
+                          e.stopPropagation(); // Zapobiega otwarciu modala szczegółów
                           setBugToDelete(bug);
                         }}
                       >
@@ -344,6 +361,7 @@ export function ProjectDetails() {
                   </Table.Row>
                 ))
               ) : (
+                // STAN PUSTY (EMPTY STATE)
                 <Table.Row>
                   <Table.Cell colSpan={6} p="0">
                     <Box p="20" textAlign="center" color="gray.500">
@@ -357,7 +375,7 @@ export function ProjectDetails() {
         </Box>
       </Box>
 
-      {/* 4. MODAL SZCZEGÓŁÓW BŁĘDU */}
+      {/* 4. MODAL SZCZEGÓŁÓW BŁĘDU (READ-ONLY VIEW) */}
       <BugDetailsModal bug={selectedBug} onClose={() => setSelectedBug(null)} />
 
       {/* 5. MODAL POTWIERDZENIA USUWANIA BŁĘDU */}

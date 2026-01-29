@@ -6,11 +6,19 @@ import { Box, Button, Center, Heading, Input, Stack } from "@chakra-ui/react";
 import { Field } from "@/components/ui/field";
 import { toaster } from "@/components/ui/toaster";
 
+// KOMPONENT LOGOWANIA (AUTHENTICATION)
+// Główny punkt wejścia do chronionej części aplikacji.
+// Odpowiada za weryfikację tożsamości użytkownika i inicjalizację sesji.
 export function Auth() {
+  // 1. LOKALNY STAN FORMULARZA
+  // Przechowuje dane uwierzytelniające wpisywane przez użytkownika.
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
+  // 2. OBSŁUGA KOMUNIKACJI Z API (TANSTACK QUERY)
+  // Wykorzystanie hooka useMutation do obsługi asynchronicznego zapytania POST.
+  // Automatycznie zarządza stanami: isPending (ładowanie), isError, isSuccess.
   const loginMutation = useMutation({
     mutationFn: async () => {
       const response = await axios.post("http://localhost:8081/api/login", {
@@ -19,22 +27,28 @@ export function Auth() {
       });
       return response.data;
     },
+    // SCENARIUSZ POZYTYWNY (SUCCESS FLOW)
     onSuccess: (data) => {
-      // Czyścimy ewentualne toastery błędów przed wejściem
+      // UX: Czyścimy poprzednie komunikaty, aby nie zasłaniały widoku
       toaster.dismiss();
+
+      // SECURITY: Zapisujemy token JWT (JSON Web Token) w localStorage.
+      // Pozwoli to na autoryzację kolejnych zapytań do API w ramach sesji.
       localStorage.setItem("token", data.token);
 
       toaster.create({
         title: "Zalogowano pomyślnie",
         type: "success",
       });
+
+      // Przekierowanie do głównego dashboardu aplikacji
       navigate("/home");
     },
+    // SCENARIUSZ NEGATYWNY (ERROR FLOW)
     onError: (error: any) => {
       const errorMessage =
         error.response?.data?.error || "Błąd połączenia z serwerem";
 
-      // Kluczowe: usuwa poprzednie toastery, żeby nie "spamować" ekranu
       toaster.dismiss();
 
       toaster.create({
@@ -45,7 +59,8 @@ export function Auth() {
     },
   });
 
-  // Funkcja pomocnicza, by nie powtarzać logiki przycisku i Entera
+  // HELPER: OBSŁUGA WYSYŁKI FORMULARZA
+  // Zapobiega wielokrotnemu wysłaniu żądania, gdy poprzednie jest w toku.
   const handleLogin = () => {
     if (!loginMutation.isPending) {
       loginMutation.mutate();
@@ -53,9 +68,12 @@ export function Auth() {
   };
 
   return (
+    // 3. WARSTWA PREZENTACJI (UI)
+    // Centrowany layout z brandingiem aplikacji i responsywnym formularzem.
     <Box minH="100vh" bg="mainBg" display="flex" flexDirection="column">
       <Center flex="1" p={4}>
         <Stack gap="8" width="full" maxW="400px">
+          {/* SEKCJA BRANDINGU */}
           <Stack gap="2" textAlign="center">
             <Heading
               size="6xl"
@@ -67,6 +85,7 @@ export function Auth() {
             </Heading>
           </Stack>
 
+          {/* KONTENER FORMULARZA */}
           <Box
             bg={{ _light: "white", _dark: "gray.800" }}
             p={{ base: "6", md: "10" }}
@@ -98,6 +117,7 @@ export function Auth() {
                   size="lg"
                   h="12"
                   disabled={loginMutation.isPending}
+                  // UX Improvement: Pozwala na zatwierdzenie enterem
                   onKeyDown={(e) => e.key === "Enter" && handleLogin()}
                 />
               </Field>
@@ -117,6 +137,7 @@ export function Auth() {
                 h="12"
                 fontWeight="medium"
                 borderRadius="xl"
+                // Walidacja: Przycisk nieaktywny, jeśli pola są puste
                 disabled={!email || !password}
               >
                 Kontynuuj

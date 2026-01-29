@@ -5,11 +5,19 @@ import { useProjects } from "../../context/ProjectContext";
 import noProjectsImg from "/empty-state/no-projects.webp";
 import projectsBgImg from "/home-with-projects/final-bug-for-website.webp";
 
+// KOMPONENT STRONY GŁÓWNEJ (DASHBOARD)
+// Główny punkt wejścia dla użytkownika po zalogowaniu.
+// Wyświetla siatkę dostępnych projektów lub ekran powitalny, jeśli brak danych.
 export function Home() {
   const navigate = useNavigate();
+
+  // 1. DOSTĘP DO DANYCH
+  // Pobieramy listę projektów z globalnego kontekstu.
   const { projects } = useProjects();
 
-  // WIDOK: BRAK PROJEKTÓW (Bez zmian)
+  // 2. WIDOK POWITALNY (EMPTY STATE)
+  // Wyświetlany warunkowo, gdy użytkownik nie posiada jeszcze żadnych projektów.
+  // Zawiera grafikę tła oraz przycisk Call-to-Action (CTA) zachęcający do utworzenia pierwszego zasobu.
   if (projects.length === 0) {
     return (
       <Stack
@@ -21,6 +29,7 @@ export function Home() {
         borderRadius="2xl"
         position="relative"
         overflow="hidden"
+        // Warstwa tła z grafiką (zmniejszona przezroczystość dla lepszej czytelności tekstu)
         _before={{
           content: '""',
           position: "absolute",
@@ -47,7 +56,7 @@ export function Home() {
           _dark={{ bg: "white", color: "black", _hover: { bg: "gray.200" } }}
           h="12"
           fontWeight="medium"
-          borderRadius="xl"
+          borderRadius="md"
         >
           Create First Project <LuPlus style={{ marginLeft: "8px" }} />
         </Button>
@@ -55,16 +64,20 @@ export function Home() {
     );
   }
 
-  // WIDOK: LISTA PROJEKTÓW
+  // 3. WIDOK LISTY PROJEKTÓW (GRID)
+  // Jeśli projekty istnieją, wyświetlamy je w scrollowalnym kontenerze.
   return (
     <Box
       position="relative"
       flex="1"
       p="1"
-      // --- KLUCZOWE ZMIANY DLA SCROLLOWANIA ---
+      // KONFIGURACJA SCROLLA
+      // 'overflowY="auto"' w połączeniu z 'maxH' zapewnia, że scrolluje się tylko obszar projektów,
+      // a nagłówek aplikacji pozostaje widoczny. Wysokość jest kalkulowana dynamicznie (viewport - header).
       overflowY="auto"
-      maxH="calc(100vh - 260px)" // Dostosuj 120px do wysokości Twojego Header/Paddingu
-      pr="2" // Padding z prawej, żeby scrollbar nie nachodził na karty
+      maxH="calc(100vh - 260px)"
+      pr="2"
+      // Stylizacja paska przewijania (Webkit) dla spójności z designem aplikacji
       css={{
         "&::-webkit-scrollbar": { width: "6px" },
         "&::-webkit-scrollbar-track": { background: "transparent" },
@@ -78,7 +91,7 @@ export function Home() {
           },
         },
       }}
-      // ---------------------------------------
+      // Tło z efektem 'fixed' (paralaksa) - nie przesuwa się podczas scrollowania kart
       _before={{
         content: '""',
         position: "absolute",
@@ -88,38 +101,41 @@ export function Home() {
         bottom: 0,
         bgImage: `url(${projectsBgImg})`,
         bgSize: "cover",
-        bgAttachment: "fixed", // Tło zostaje w miejscu podczas scrollowania
+        bgAttachment: "fixed",
         filter: "grayscale(100%)",
         opacity: "0.15",
         zIndex: 0,
         pointerEvents: "none",
       }}
     >
+      {/* 4. SIATKA RESPONSYWNA (GRID SYSTEM) */}
       <SimpleGrid
-        columns={{ base: 1, md: 3, lg: 5 }}
+        columns={{ base: 1, md: 3, lg: 5 }} // 1 kolumna na mobile, 5 na dużych ekranach
         gap="6"
         position="relative"
         zIndex={1}
-        pb="10" // Dodatkowy padding na dole, żeby ostatni rząd nie dotykał krawędzi
+        pb="10"
       >
         {projects.map((project) => (
+          // KARTA PROJEKTU
+          // Interaktywny element przenoszący do szczegółów projektu po kliknięciu.
           <Box
             key={project.id}
             as="button"
             onClick={() => navigate(`/project/${project.id}`)}
             p="5"
             bg={{ _light: "white", _dark: "gray.900" }}
-            borderRadius="2xl"
+            borderRadius="md"
             borderWidth="1px"
-            borderColor="gray.100"
-            _dark={{ borderColor: "gray.700" }}
+            borderColor={{ _light: "gray.200", _dark: "gray.800" }}
             display="flex"
             flexDirection="column"
             alignItems="center"
+            // Efekty hover: lekkie uniesienie karty i cień
             _hover={{
               bg: "gray.50",
               _dark: { bg: "gray.800" },
-              transform: "translateY(-4px)", // Nieco mocniejszy efekt
+              transform: "translateY(-4px)",
               boxShadow: "md",
             }}
             transition="all 0.2s ease-in-out"
@@ -127,6 +143,7 @@ export function Home() {
             gap="3"
             boxShadow="sm"
           >
+            {/* Wizualny identyfikator projektu (pierwsza litera na kolorowym tle) */}
             <Circle size="16" bg={project.color} color="white">
               <Text fontSize="2xl" fontWeight="bold">
                 {project.name.charAt(0).toUpperCase()}
@@ -138,14 +155,15 @@ export function Home() {
           </Box>
         ))}
 
-        {/* Przycisk dodawania kolejnego projektu */}
+        {/* KARTA 'DODAJ NOWY' */}
+        {/* Specjalny element na końcu siatki, służący jako skrót do tworzenia kolejnego projektu */}
         <Box
           as="button"
           onClick={() => navigate("/create-project")}
           border="2px dashed"
           borderColor="gray.300"
           _dark={{ borderColor: "gray.600" }}
-          borderRadius="2xl"
+          borderRadius="md"
           display="flex"
           alignItems="center"
           justifyContent="center"

@@ -16,19 +16,30 @@ import {
   DialogPositioner,
   Link,
   Circle,
+  SimpleGrid,
 } from "@chakra-ui/react";
 import { LuExternalLink, LuMonitor, LuInfo } from "react-icons/lu";
 import { type Bug } from "../context/ProjectContext";
 
+// DEFINICJA PROPSÓW
+// Komponent przyjmuje obiekt błędu (lub null, jeśli żaden nie jest wybrany)
+// oraz funkcję zamykającą modal.
 interface Props {
   bug: Bug | null;
   onClose: () => void;
 }
 
+// KOMPONENT SZCZEGÓŁÓW ZGŁOSZENIA
+// Prezentuje pełne informacje o błędzie w formie modala (okna dialogowego).
+// Jest komponentem "głupim" (presentational) - wyświetla dane przekazane przez propsy,
+// dzięki czemu może być używany zarówno w panelu admina, jak i w widoku klienta.
 export function BugDetailsModal({ bug, onClose }: Props) {
+  // GUARD CLAUSE: Jeśli nie wybrano błędu, nie renderujemy nic (modal jest ukryty).
   if (!bug) return null;
 
   return (
+    // KONTROLER MODALA
+    // 'open={!!bug}' konwertuje obiekt na boolean -> true jeśli bug istnieje.
     <DialogRoot
       open={!!bug}
       onOpenChange={onClose}
@@ -43,6 +54,8 @@ export function BugDetailsModal({ bug, onClose }: Props) {
           borderColor={{ _light: "gray.100", _dark: "gray.800" }}
           overflow="hidden"
         >
+          {/* 1. NAGŁÓWEK: KLUCZOWE INFORMACJE */}
+          {/* Zawiera ID, Tytuł oraz kolorowy Badge priorytetu dla szybkiej identyfikacji wagi problemu. */}
           <DialogHeader
             bg={{ _light: "gray.50", _dark: "gray.900" }}
             py="5"
@@ -62,6 +75,7 @@ export function BugDetailsModal({ bug, onClose }: Props) {
                   {bug.title}
                 </DialogTitle>
               </Stack>
+              {/* Dynamiczne kolorowanie Badge w zależności od priorytetu */}
               <Badge
                 colorPalette={
                   bug.priority === "High"
@@ -83,7 +97,8 @@ export function BugDetailsModal({ bug, onClose }: Props) {
 
           <DialogBody py="6" px="6">
             <Stack gap="8">
-              {/* Sekcja Urządzenia i Daty */}
+              {/* 2. SEKCJA METADANYCH (Device & Date) */}
+              {/* Wykorzystuje ikony w okręgach (Circle) jako kotwice wizualne. */}
               <HStack gap="8" fontSize="sm" color="gray.600">
                 <HStack gap="2">
                   <Circle size="8" bg="gray.100">
@@ -121,7 +136,8 @@ export function BugDetailsModal({ bug, onClose }: Props) {
                 </HStack>
               </HStack>
 
-              {/* Steps to Reproduce */}
+              {/* 3. KROKI REPRODUKCJI (STEPS TO REPRODUCE) */}
+              {/* Tekst w osobnym kontenerze dla lepszej czytelności instrukcji. */}
               <Stack gap="2">
                 <HStack gap="2">
                   <Text
@@ -148,7 +164,8 @@ export function BugDetailsModal({ bug, onClose }: Props) {
                 </Box>
               </Stack>
 
-              {/* Comparison Box */}
+              {/* 4. PORÓWNANIE WYNIKÓW (ACTUAL VS EXPECTED) */}
+              {/* Układ Grid 2-kolumnowy pozwalający na łatwe zestawienie różnic. */}
               <SimpleGrid columns={2} gap="4">
                 <Stack gap="2">
                   <Text
@@ -209,7 +226,8 @@ export function BugDetailsModal({ bug, onClose }: Props) {
                 </Stack>
               </SimpleGrid>
 
-              {/* Screenshot Link */}
+              {/* 5. SEKCJA ZAŁĄCZNIKÓW */}
+              {/* Renderowana warunkowo - tylko jeśli URL screenshota istnieje. */}
               {bug.screenshotUrl && (
                 <Box>
                   <Link
@@ -234,6 +252,7 @@ export function BugDetailsModal({ bug, onClose }: Props) {
             </Stack>
           </DialogBody>
 
+          {/* STOPKA: PRZYCISK ZAMKNIĘCIA */}
           <DialogFooter
             px="6"
             py="4"
@@ -249,6 +268,3 @@ export function BugDetailsModal({ bug, onClose }: Props) {
     </DialogRoot>
   );
 }
-
-// Pomocniczy import dla układu (jeśli nie masz go w Chakra)
-import { SimpleGrid } from "@chakra-ui/react";
