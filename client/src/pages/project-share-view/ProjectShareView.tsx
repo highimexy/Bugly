@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import axios from "axios"; // <--- 1. Importujemy axios do niezależnego zapytania
 import {
   Box,
   Text,
@@ -10,32 +11,48 @@ import {
   Container,
   Spinner,
 } from "@chakra-ui/react";
-import { useProjects, type Bug } from "../../context/ProjectContext";
+// WAŻNE: Importujemy TYLKO TYPY, nie 'useProjects'!
+import type { Bug, Project } from "../../context/ProjectContext";
 import { BugDetailsModal } from "../../components/BugDetailsModal";
 
-// KOMPONENT WIDOKU DLA KLIENTA (READ-ONLY)
-// Służy do udostępniania postępów prac osobom z zewnątrz (np. klientom),
-// oferując uproszczony interfejs bez możliwości edycji czy usuwania danych.
+// Definicja adresu API (taka sama jak w Context/Auth)
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8081/api";
+
 export function ProjectShareView() {
   const { id } = useParams();
 
-  // 1. INTEGRACJA Z GLOBALNYM STANEM APLIKACJI
-  // Pobieramy pełną listę projektów i błędów z Context API.
-  const { projects, bugs, isLoading } = useProjects();
+  // 2. LOKALNY STAN (Zamiast Globalnego Contextu)
+  // Ten widok zarządza własnymi danymi.
+  const [project, setProject] = useState<Project | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  // 2. LOKALNY STAN WIDOKU
-  // 'selectedBug': Kontroluje wyświetlanie modala ze szczegółami.
-  // 'doneBugs': Przechowuje listę ID zadań "odfajkowanych" przez klienta w bieżącej sesji (zmiana wizualna).
+  // Stan dla modala i checkboxów
   const [selectedBug, setSelectedBug] = useState<Bug | null>(null);
   const [doneBugs, setDoneBugs] = useState<string[]>([]);
 
-  // 3. FILTROWANIE DANYCH
-  // Wyodrębniamy dane specyficzne dla aktualnie przeglądanego projektu na podstawie URL ID.
-  const project = projects.find((p) => p.id === id);
-  const projectBugs = bugs.filter((b) => b.projectId === id);
+  // 3. POBIERANIE DANYCH (Izolowane)
+  // Pobieramy tylko ten jeden projekt, o który prosi URL.
+  useEffect(() => {
+    const fetchProjectDetails = async () => {
+      try {
+        setIsLoading(true);
+        // Strzał do endpointu, który zwraca JEDEN projekt (stworzyliśmy go wcześniej w Go)
+        const response = await axios.get(`${API_URL}/projects/${id}`);
+        setProject(response.data);
+      } catch (err) {
+        console.error("Failed to fetch project:", err);
+        setError(true);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  // LOGIKA BIZNESOWA: PRZEŁĄCZANIE STATUSU (LOCAL ONLY)
-  // Funkcja dodaje lub usuwa ID błędu z tablicy 'doneBugs', co steruje przekreśleniem wiersza.
+    if (id) {
+      fetchProjectDetails();
+    }
+  }, [id]);
+
   const toggleDone = (bugId: string) => {
     setDoneBugs((prev) =>
       prev.includes(bugId)
@@ -55,17 +72,22 @@ export function ProjectShareView() {
   }
 
   // OBSŁUGA BŁĘDÓW (404)
-  if (!project)
+  if (!project || error)
     return (
-      <Box p="10">
-        <Text>Project does not exist or the link has expired.</Text>
+      <Box p="10" textAlign="center">
+        <Heading size="lg" color="red.500">
+          Project Not Found
+        </Heading>
+        <Text mt="2">This project does not exist or the link is invalid.</Text>
       </Box>
     );
 
+  // Helper: Backend zwraca błędy wewnątrz obiektu project (dzięki Preload)
+  const projectBugs = project.bugs || [];
+
   return (
     <Container maxW="container.xl" py="10">
-      {/* SEKCJA NAGŁÓWKA */}
-      {/* Wyświetla nazwę projektu oraz sumaryczną liczbę zgłoszonych problemów */}
+      {/* NAGŁÓWEK */}
       <Flex
         justify="space-between"
         align="center"
@@ -84,7 +106,7 @@ export function ProjectShareView() {
         </Badge>
       </Flex>
 
-      {/* SEKCJA GŁÓWNA: TABELA DANYCH */}
+      {/* TABELA */}
       <Box
         border="1px solid"
         borderColor={{ _light: "gray.200", _dark: "gray.800" }}
@@ -104,7 +126,6 @@ export function ProjectShareView() {
               <Table.ColumnHeader fontWeight="bold">
                 Created At
               </Table.ColumnHeader>
-              {/* Kolumna akcji dla klienta (Status Checkbox) */}
               <Table.ColumnHeader fontWeight="bold" textAlign="end">
                 Status
               </Table.ColumnHeader>
@@ -112,7 +133,6 @@ export function ProjectShareView() {
           </Table.Header>
           <Table.Body>
             {projectBugs.map((bug) => {
-              // Sprawdzamy, czy dany wiersz ma być wygaszony/przekreślony
               const isDone = doneBugs.includes(bug.id);
 
               return (
@@ -120,22 +140,18 @@ export function ProjectShareView() {
                   key={bug.id}
                   onClick={() => setSelectedBug(bug)}
                   cursor="pointer"
-                  // Wizualny feedback: zmniejszona przezroczystość dla zadań wykonanych
                   opacity={isDone ? 0.5 : 1}
                   _hover={{ bg: { _light: "gray.50", _dark: "gray.800" } }}
                 >
                   <Table.Cell
                     fontWeight="bold"
                     color="blue.600"
-                    _dark={{ color: "blue.400" }}
-                    // Przekreślenie ID, jeśli zadanie jest 'DONE'
                     textDecoration={isDone ? "line-through" : "none"}
                   >
                     {bug.id}
                   </Table.Cell>
                   <Table.Cell
                     fontWeight="medium"
-                    // Przekreślenie tytułu dla spójności wizualnej
                     textDecoration={isDone ? "line-through" : "none"}
                   >
                     {bug.title}
@@ -161,10 +177,9 @@ export function ProjectShareView() {
                     {new Date(bug.createdAt).toLocaleDateString()}
                   </Table.Cell>
 
-                  {/* KOMÓRKA INTERAKTYWNA: CHECKBOX */}
+                  {/* CHECKBOX "DONE" */}
                   <Table.Cell
                     textAlign="end"
-                    // Zapobiegamy propagacji, aby kliknięcie w checkbox nie otwierało modala
                     onClick={(e) => e.stopPropagation()}
                   >
                     <Flex align="center" justify="flex-end" gap="2">
@@ -175,7 +190,6 @@ export function ProjectShareView() {
                       >
                         {isDone ? "DONE" : "TODO"}
                       </Text>
-                      {/* Natywny input dla pewności stylowania accent-color */}
                       <input
                         type="checkbox"
                         checked={isDone}
@@ -195,7 +209,6 @@ export function ProjectShareView() {
           </Table.Body>
         </Table.Root>
 
-        {/* STAN PUSTY: Wyświetlany, gdy lista błędów jest pusta */}
         {projectBugs.length === 0 && (
           <Box
             p="20"
@@ -208,7 +221,6 @@ export function ProjectShareView() {
         )}
       </Box>
 
-      {/* MODAL SZCZEGÓŁÓW: Reużywalny komponent do wyświetlania pełnych informacji */}
       <BugDetailsModal bug={selectedBug} onClose={() => setSelectedBug(null)} />
     </Container>
   );

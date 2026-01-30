@@ -17,40 +17,49 @@ import {
   Link,
   Circle,
   SimpleGrid,
+  Image,
 } from "@chakra-ui/react";
 import { LuExternalLink, LuMonitor, LuInfo } from "react-icons/lu";
 import { type Bug } from "../context/ProjectContext";
 
-// DEFINICJA PROPSÓW
-// Komponent przyjmuje obiekt błędu (lub null, jeśli żaden nie jest wybrany)
-// oraz funkcję zamykającą modal.
 interface Props {
   bug: Bug | null;
   onClose: () => void;
 }
 
-// KOMPONENT SZCZEGÓŁÓW ZGŁOSZENIA
-// Prezentuje pełne informacje o błędzie w formie modala (okna dialogowego).
-// Jest komponentem "głupim" (presentational) - wyświetla dane przekazane przez propsy,
-// dzięki czemu może być używany zarówno w panelu admina, jak i w widoku klienta.
 export function BugDetailsModal({ bug, onClose }: Props) {
-  // GUARD CLAUSE: Jeśli nie wybrano błędu, nie renderujemy nic (modal jest ukryty).
   if (!bug) return null;
 
-  // FUNKCJA POMOCNICZA: NAPRAWIANIE LINKÓW
-  // Jeśli link nie zaczyna się od http/https, dodajemy https:// na początku.
-  // Dzięki temu przeglądarka wie, że to zewnętrzna strona.
-  const getValidUrl = (url: string) => {
+  // 1. MAGICZNA FUNKCJA DO GOOGLE DRIVE
+  // Zamienia link "podglądu" na link "bezpośredniego obrazka"
+  const getProccesedUrl = (url: string) => {
     if (!url) return "";
-    if (url.startsWith("http://") || url.startsWith("https://")) {
-      return url;
+
+    // Krok A: Naprawiamy brakujące https
+    let finalUrl = url;
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      finalUrl = `https://${url}`;
     }
-    return `https://${url}`;
+
+    // Krok B: Wykrywamy Google Drive
+    if (
+      finalUrl.includes("drive.google.com") &&
+      finalUrl.includes("/file/d/")
+    ) {
+      // Wyciągamy ID pliku za pomocą wyrażenia regularnego (Regex)
+      const match = finalUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+      if (match && match[1]) {
+        // Zwracamy specjalny link Google do wyświetlania obrazka
+        return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+      }
+    }
+
+    return finalUrl;
   };
 
+  const displayUrl = getProccesedUrl(bug.screenshotUrl || "");
+
   return (
-    // KONTROLER MODALA
-    // 'open={!!bug}' konwertuje obiekt na boolean -> true jeśli bug istnieje.
     <DialogRoot
       open={!!bug}
       onOpenChange={onClose}
@@ -64,9 +73,8 @@ export function BugDetailsModal({ bug, onClose }: Props) {
           border="1px solid"
           borderColor={{ _light: "gray.100", _dark: "gray.800" }}
           overflow="hidden"
+          maxW="800px"
         >
-          {/* 1. NAGŁÓWEK: KLUCZOWE INFORMACJE */}
-          {/* Zawiera ID, Tytuł oraz kolorowy Badge priorytetu dla szybkiej identyfikacji wagi problemu. */}
           <DialogHeader
             bg={{ _light: "gray.50", _dark: "gray.900" }}
             py="5"
@@ -86,7 +94,6 @@ export function BugDetailsModal({ bug, onClose }: Props) {
                   {bug.title}
                 </DialogTitle>
               </Stack>
-              {/* Dynamiczne kolorowanie Badge w zależności od priorytetu */}
               <Badge
                 colorPalette={
                   bug.priority === "High"
@@ -108,8 +115,7 @@ export function BugDetailsModal({ bug, onClose }: Props) {
 
           <DialogBody py="6" px="6">
             <Stack gap="8">
-              {/* 2. SEKCJA METADANYCH (Device & Date) */}
-              {/* Wykorzystuje ikony w okręgach (Circle) jako kotwice wizualne. */}
+              {/* Device & Date */}
               <HStack gap="8" fontSize="sm" color="gray.600">
                 <HStack gap="2">
                   <Circle size="8" bg="gray.100">
@@ -147,20 +153,17 @@ export function BugDetailsModal({ bug, onClose }: Props) {
                 </HStack>
               </HStack>
 
-              {/* 3. KROKI REPRODUKCJI (STEPS TO REPRODUCE) */}
-              {/* Tekst w osobnym kontenerze dla lepszej czytelności instrukcji. */}
+              {/* Steps */}
               <Stack gap="2">
-                <HStack gap="2">
-                  <Text
-                    fontWeight="bold"
-                    fontSize="xs"
-                    textTransform="uppercase"
-                    letterSpacing="wider"
-                    color="blue.600"
-                  >
-                    Steps to Reproduce
-                  </Text>
-                </HStack>
+                <Text
+                  fontWeight="bold"
+                  fontSize="xs"
+                  textTransform="uppercase"
+                  letterSpacing="wider"
+                  color="blue.600"
+                >
+                  Steps to Reproduce
+                </Text>
                 <Box
                   p="3"
                   bg="white"
@@ -168,15 +171,13 @@ export function BugDetailsModal({ bug, onClose }: Props) {
                   borderColor="gray.100"
                   borderRadius="md"
                   fontSize="sm"
-                  lineHeight="tall"
                   _dark={{ bg: "gray.800", borderColor: "gray.700" }}
                 >
                   {bug.stepsToReproduce}
                 </Box>
               </Stack>
 
-              {/* 4. PORÓWNANIE WYNIKÓW (ACTUAL VS EXPECTED) */}
-              {/* Układ Grid 2-kolumnowy pozwalający na łatwe zestawienie różnic. */}
+              {/* Result Comparison */}
               <SimpleGrid columns={2} gap="4">
                 <Stack gap="2">
                   <Text
@@ -195,18 +196,11 @@ export function BugDetailsModal({ bug, onClose }: Props) {
                     borderColor="gray.100"
                     borderRadius="md"
                     fontSize="sm"
-                    lineHeight="tall"
-                    color="gray.800"
-                    _dark={{
-                      bg: "gray.800",
-                      borderColor: "gray.700",
-                      color: "gray.200",
-                    }}
+                    _dark={{ bg: "gray.800", borderColor: "gray.700" }}
                   >
                     {bug.actualResult}
                   </Box>
                 </Stack>
-
                 <Stack gap="2">
                   <Text
                     fontWeight="bold"
@@ -224,28 +218,56 @@ export function BugDetailsModal({ bug, onClose }: Props) {
                     borderColor="gray.100"
                     borderRadius="md"
                     fontSize="sm"
-                    lineHeight="tall"
-                    color="gray.800"
-                    _dark={{
-                      bg: "gray.800",
-                      borderColor: "gray.700",
-                      color: "gray.200",
-                    }}
+                    _dark={{ bg: "gray.800", borderColor: "gray.700" }}
                   >
                     {bug.expectedResult}
                   </Box>
                 </Stack>
               </SimpleGrid>
 
-              {/* 5. SEKCJA ZAŁĄCZNIKÓW */}
-              {/* Renderowana warunkowo - tylko jeśli URL screenshota istnieje. */}
-              {bug.screenshotUrl && (
-                <Box>
+              {/* SEKCJA SCREENSHOTA */}
+              {displayUrl && (
+                <Stack gap="3">
+                  <Text
+                    fontWeight="bold"
+                    fontSize="xs"
+                    textTransform="uppercase"
+                    letterSpacing="wider"
+                    color="purple.600"
+                  >
+                    Screenshot Evidence
+                  </Text>
+
+                  <Box
+                    borderRadius="lg"
+                    overflow="hidden"
+                    borderWidth="1px"
+                    borderColor="gray.200"
+                    bg="gray.50"
+                    _dark={{ borderColor: "gray.700", bg: "gray.900" }}
+                  >
+                    <Image
+                      src={displayUrl}
+                      alt="Bug Screenshot"
+                      objectFit="contain"
+                      w="full"
+                      maxH="500px"
+                      // ZAMIAST fallbackSrc:
+                      onError={(e) => {
+                        // Zabezpieczenie przed pętlą, gdyby placeholder też nie działał
+                        e.currentTarget.onerror = null;
+                        // Podmiana źródła na obrazek zastępczy
+                        e.currentTarget.src =
+                          "https://via.placeholder.com/400x300?text=Image+Load+Error";
+                      }}
+                    />
+                  </Box>
+
                   <Link
-                    href={getValidUrl(bug.screenshotUrl)}
+                    href={displayUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    p="3"
+                    p="2"
                     display="flex"
                     alignItems="center"
                     justifyContent="center"
@@ -257,14 +279,13 @@ export function BugDetailsModal({ bug, onClose }: Props) {
                     fontWeight="bold"
                     _dark={{ bg: "gray.800", _hover: { bg: "gray.700" } }}
                   >
-                    <LuExternalLink /> View Screenshot Reference
+                    <LuExternalLink /> Open original image in new tab
                   </Link>
-                </Box>
+                </Stack>
               )}
             </Stack>
           </DialogBody>
 
-          {/* STOPKA: PRZYCISK ZAMKNIĘCIA */}
           <DialogFooter
             px="6"
             py="4"

@@ -7,8 +7,6 @@ import {
 } from "react";
 
 // MODELE DANYCH
-// Definicje kształtu danych używanych w całej aplikacji.
-// Interface 'Bug' reprezentuje pojedyncze zgłoszenie błędu.
 export interface Bug {
   id: string;
   projectId: string;
@@ -22,8 +20,7 @@ export interface Bug {
   createdAt: string;
 }
 
-// Interface 'Project' reprezentuje kontener dla zgłoszeń (projekt).
-interface Project {
+export interface Project {
   id: string;
   name: string;
   color: string;
@@ -31,7 +28,6 @@ interface Project {
 }
 
 // KONTRAKT KONTEKSTU
-// Definiuje metody i dane dostępne dla komponentów konsumujących ten kontekst.
 interface ProjectContextType {
   projects: Project[];
   bugs: Bug[];
@@ -40,32 +36,42 @@ interface ProjectContextType {
   addBug: (bugData: Omit<Bug, "id" | "createdAt">) => Promise<void>;
   deleteBug: (bugId: string, projectId: string) => Promise<void>;
   isLoading: boolean;
+  // 👇 1. DODANO: Definicja funkcji odświeżania w typach
+  refreshData: () => Promise<void>;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8081/api";
 
-// GLOBALNY DOSTAWCA STANU (PROVIDER)
-// Zarządza stanem projektów i błędów, oraz komunikacją z REST API.
-// Otacza całą aplikację w App.tsx.
 export function ProjectProvider({ children }: { children: ReactNode }) {
-  // STAN APLIKACJI
-  // 'projects': Lista wszystkich projektów.
-  // 'bugs': Płaska lista wszystkich błędów (pochodna od projects, dla łatwiejszego dostępu).
-  // 'isLoading': Flaga sterująca wyświetlaniem spinnerów ładowania.
   const [projects, setProjects] = useState<Project[]>([]);
   const [bugs, setBugs] = useState<Bug[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // SYNCHRONIZACJA DANYCH
-  // Pobiera pełną strukturę danych z backendu i aktualizuje stan lokalny.
-  // Spłaszcza strukturę (flatMap), aby błędy były łatwo dostępne globalnie.
   const fetchAllData = async () => {
-    try {
-      const response = await fetch(`${API_URL}/projects`);
-      const data: Project[] = await response.json();
+    const token = localStorage.getItem("token");
 
+    // STRAŻNIK: Brak tokena = brak pobierania danych
+    if (!token) {
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/projects`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.status === 401) {
+        localStorage.removeItem("token");
+        return;
+      }
+
+      const data: Project[] = await response.json();
       setProjects(data);
       const allBugs = data.flatMap((p) => p.bugs || []);
       setBugs(allBugs);
@@ -76,15 +82,11 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // INICJALIZACJA
-  // Pobranie danych przy pierwszym renderowaniu aplikacji (Mount).
   useEffect(() => {
     fetchAllData();
   }, []);
 
   // TWORZENIE PROJEKTU
-  // Generuje unikalne ID po stronie klienta (format PRJ-XXXX),
-  // wysyła dane do API i odświeża stan globalny.
   const addProject = async (name: string, color: string) => {
     const newProject = {
       id: `PRJ-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -93,16 +95,21 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     };
 
     try {
+      // 👇 Pobieramy token do każdego zapytania
+      const token = localStorage.getItem("token");
       const response = await fetch(`${API_URL}/projects`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newProject), // Wysyłamy kompletny obiekt z ID
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // 👇 Dodano autoryzację
+        },
+        body: JSON.stringify(newProject),
       });
 
       if (response.ok) {
         const savedProject = await response.json();
         await fetchAllData();
-        return savedProject.id; // Zwracamy ID, aby nawigacja mogła zadziałać
+        return savedProject.id;
       }
     } catch (error) {
       console.error("Błąd dodawania projektu:", error);
@@ -110,11 +117,14 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   };
 
   // USUWANIE PROJEKTU
-  // Usuwa zasób z serwera i synchronizuje widok.
   const deleteProject = async (id: string) => {
     try {
+      const token = localStorage.getItem("token");
       const response = await fetch(`${API_URL}/projects/${id}`, {
         method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`, // 👇 Dodano autoryzację
+        },
       });
 
       if (response.ok) {
@@ -126,13 +136,9 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   };
 
   // TWORZENIE ZGŁOSZENIA (BUG)
-  // Implementuje logikę sekwencyjnego ID (BUG-1, BUG-2) w obrębie projektu.
-  // Oblicza następny numer na podstawie aktualnego stanu, a następnie wysyła do API.
   const addBug = async (bugData: Omit<Bug, "id" | "createdAt">) => {
-    // Krok 1: Filtrujemy błędy tylko dla danego projektu
     const projectBugs = bugs.filter((b) => b.projectId === bugData.projectId);
 
-    // Krok 2: Znajdujemy najwyższy numer ID, aby nadać kolejny (auto-increment logic)
     const lastNumber = projectBugs.reduce((max, bug) => {
       const num = parseInt(bug.id.replace("BUG-", ""), 10);
       return !isNaN(num) && num > max ? num : max;
@@ -140,23 +146,34 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
 
     const nextId = `BUG-${lastNumber + 1}`;
 
-    const response = await fetch(`${API_URL}/bugs`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...bugData, id: nextId }),
-    });
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_URL}/bugs`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // 👇 Dodano autoryzację
+        },
+        body: JSON.stringify({ ...bugData, id: nextId }),
+      });
 
-    if (response.ok) await fetchAllData();
+      if (response.ok) await fetchAllData();
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   // USUWANIE BŁĘDU
-  // Usuwa konkretne zgłoszenie w kontekście projektu (nested resource).
   const deleteBug = async (bugId: string, projectId: string) => {
     try {
+      const token = localStorage.getItem("token");
       const response = await fetch(
         `${API_URL}/projects/${projectId}/bugs/${bugId}`,
         {
           method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`, // 👇 Dodano autoryzację
+          },
         },
       );
 
@@ -176,6 +193,8 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         addBug,
         deleteBug,
         isLoading,
+        // 👇 2. DODANO: Udostępniamy funkcję reszcie aplikacji
+        refreshData: fetchAllData,
       }}
     >
       {children}
@@ -183,8 +202,6 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// CUSTOM HOOK
-// Ułatwia dostęp do kontekstu w komponentach, zabezpieczając przed użyciem poza Providerem.
 export const useProjects = () => {
   const context = useContext(ProjectContext);
   if (!context)

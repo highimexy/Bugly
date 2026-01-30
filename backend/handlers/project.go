@@ -111,3 +111,29 @@ func DeleteBug(db *gorm.DB) gin.HandlerFunc {
 		c.JSON(http.StatusOK, gin.H{"message": "Bug deleted"})
 	}
 }
+
+// NOWA FUNKCJA: GetProjectDetails
+// Pobiera szczegóły jednego projektu na podstawie ID z URL
+func GetProjectDetails(db *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		projectId := c.Param("projectId")
+		var project models.Project
+
+		// 1. Szukamy projektu o podanym ID
+		// 2. Preload("Bugs") - mówi bazie: "daj mi też wszystkie błędy przypisane do tego projektu"
+		if err := db.Preload("Bugs").First(&project, "id = ?", projectId).Error; err != nil {
+			
+			// Jeśli nie znaleziono rekordu -> Błąd 404
+			if err == gorm.ErrRecordNotFound {
+				c.JSON(http.StatusNotFound, gin.H{"error": "Project not found"})
+			} else {
+				// Inny błąd bazy -> Błąd 500
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
+			}
+			return
+		}
+
+		// Sukces -> Zwracamy projekt JSONem
+		c.JSON(http.StatusOK, project)
+	}
+}

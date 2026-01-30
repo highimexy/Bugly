@@ -55,6 +55,7 @@ func main() {
         api.GET("/projects", handlers.GetProjects(db))
         api.POST("/projects", handlers.CreateProject(db))
         api.DELETE("/projects/:projectId", handlers.DeleteProject(db))
+        api.GET("/projects/:projectId", handlers.GetProjectDetails(db))
         api.POST("/bugs", handlers.CreateBug(db))
         api.DELETE("/projects/:projectId/bugs/:bugId", handlers.DeleteBug(db))
     }

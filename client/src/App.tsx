@@ -1,4 +1,10 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  Outlet,
+} from "react-router-dom"; // <--- 1. Dodaj import Outlet
 import { Auth } from "./pages/auth/Auth";
 import { Home } from "./pages/home/Home";
 import { CreateProject } from "./pages/create-project/CreateProject";
@@ -11,31 +17,48 @@ import { ProjectDetails } from "./pages/project-details/ProjectDetails";
 import { Toaster } from "@/components/ui/toaster";
 import { ProjectShareView } from "./pages/project-share-view/ProjectShareView";
 
+// 2. KOMPONENT POMOCNICZY
+// Ten "Layout" służy tylko do tego, żeby dostarczyć Context API.
+// Użyjemy go, żeby otoczyć nim TYLKO Admina i Auth, ale NIE ShareView.
+const AppDataLayer = () => {
+  return (
+    <ProjectProvider>
+      <Outlet />
+    </ProjectProvider>
+  );
+};
+
 function App() {
   return (
-    // 1. GLOBAL STATE MANAGEMENT
-    // ProjectProvider otacza całą aplikację, udostępniając stan projektów i błędów
-    // dla wszystkich komponentów podrzędnych.
-    <ProjectProvider>
-      <BrowserRouter>
-        {/* 2. GLOBAL UI COMPONENTS */}
-        {/* Komponenty widoczne niezależnie od aktywnej trasy (Powiadomienia + Przełącznik motywu) */}
-        <Toaster />
+    // 3. ProjectProvider ZNIKNĄŁ STĄD (był na samej górze)
+    <BrowserRouter>
+      {/* Globalne elementy UI */}
+      <Toaster />
+      <Box position="fixed" top="4" right="4" zIndex="1000">
+        <ToggleColorMode />
+      </Box>
 
-        <Box position="fixed" top="4" right="4" zIndex="1000">
-          <ToggleColorMode />
-        </Box>
+      <Routes>
+        {/* ================================================================ */}
+        {/* A. WIDOKI IZOLOWANE (BEZ DOSTĘPU DO PROJECT CONTEXT)             */}
+        {/* ================================================================ */}
+        {/* Tutaj ProjectProvider fizycznie nie istnieje. 
+            Nie ma szans, żeby pobrał jakiekolwiek dane wszystkich projektów. */}
 
-        {/* 3. ROUTING ARCHITECTURE */}
-        <Routes>
-          {/* A. PUBLIC ROUTES & REDIRECTS */}
-          {/* Domyślne przekierowanie ścieżki głównej do panelu logowania */}
-          <Route path="/" element={<Navigate to="/auth" replace />} />
+        <Route path="/share/:id" element={<ProjectShareView />} />
+
+        {/* ================================================================ */}
+        {/* B. STREFA APLIKACJI (Z DOSTĘPEM DO PROJECT CONTEXT)              */}
+        {/* ================================================================ */}
+        {/* Wszystko wewnątrz tej trasy jest otoczone przez ProjectProvider. 
+            Auth tego potrzebuje (do refreshData), Dashboard też. */}
+
+        <Route element={<AppDataLayer />}>
+          {/* Publiczne (ale z kontekstem) */}
           <Route path="/auth" element={<Auth />} />
+          <Route path="/" element={<Navigate to="/auth" replace />} />
 
-          {/* B. PROTECTED ROUTES (ADMIN PANEL) */}
-          {/* Strefa chroniona - dostępna tylko dla zweryfikowanych użytkowników.
-              Używa 'DashboardLayout' do renderowania wspólnego paska bocznego i nagłówka. */}
+          {/* Chronione (Admin) */}
           <Route element={<ProtectedRoute />}>
             <Route element={<DashboardLayout />}>
               <Route path="/home" element={<Home />} />
@@ -44,17 +67,11 @@ function App() {
             </Route>
           </Route>
 
-          {/* C. FALLBACK ROUTE */}
-          {/* Przekierowanie wszelkich nieznanych ścieżek do strony głównej panelu */}
+          {/* Fallback */}
           <Route path="*" element={<Navigate to="/home" replace />} />
-
-          {/* D. CLIENT FACING ROUTES */}
-          {/* Publiczny widok 'tylko do odczytu' dla klientów zewnętrznych.
-              Renderowany poza głównym layoutem administracyjnym (brak paska bocznego). */}
-          <Route path="/share/:id" element={<ProjectShareView />} />
-        </Routes>
-      </BrowserRouter>
-    </ProjectProvider>
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 
