@@ -13,51 +13,36 @@ import { useProjects } from "../../context/ProjectContext";
 import { useState, useEffect } from "react";
 
 // GŁÓWNY LAYOUT APLIKACJI (DASHBOARD)
-// Odpowiada za strukturę szkieletową widoków administracyjnych.
-// Zawiera stały pasek boczny (Sidebar) oraz dynamiczny obszar roboczy (Content Area) renderowany przez <Outlet />.
 export function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { id } = useParams();
   const { projects } = useProjects();
 
-  // 1. ZARZĄDZANIE HISTORIĄ PRZEGLĄDANIA (PERSISTENCE)
-  // Inicjalizacja stanu na podstawie danych z localStorage, co zapewnia zachowanie
-  // listy "Ostatnich projektów" nawet po odświeżeniu strony lub restarcie przeglądarki.
+  // 1. HISTORIA
   const [recentIds, setRecentIds] = useState<string[]>(() => {
     const saved = localStorage.getItem("recentProjects");
     return saved ? JSON.parse(saved) : [];
   });
 
-  // 2. LOGIKA AKTUALIZACJI HISTORII (FIFO QUEUE)
-  // Efekt uruchamiany przy zmianie ID w URL. Implementuje logikę kolejki:
-  // - Usuwa duplikaty (jeśli projekt był już na liście).
-  // - Dodaje bieżący projekt na początek listy.
-  // - Ogranicza historię do 10 ostatnich elementów.
+  // 2. LOGIKA AKTUALIZACJI HISTORII
   useEffect(() => {
     if (id) {
       setRecentIds((prev) => {
-        // Usuwamy obecne ID z listy (jeśli istnieje), aby dodać je na sam początek
         const filtered = prev.filter((recentId) => recentId !== id);
-        // Dodajemy nowe ID na start i ucinamy do 10 pozycji
         const updated = [id, ...filtered].slice(0, 10);
-
         localStorage.setItem("recentProjects", JSON.stringify(updated));
         return updated;
       });
     }
   }, [id]);
 
-  // 3. TRANSFORMACJA DANYCH I BEZPIECZEŃSTWO
-  // Mapowanie zapisanych ID na pełne obiekty projektów z Context API.
-  // Filtrowanie (p !== undefined) zabezpiecza przed błędami renderowania w przypadku,
-  // gdy projekt z historii został w międzyczasie usunięty z bazy danych.
+  // 3. TRANSFORMACJA DANYCH
   const recentProjects = recentIds
     .map((recentId) => projects.find((p) => p.id === recentId))
     .filter((p): p is any => p !== undefined);
 
-  // DYNAMICZNY NAGŁÓWEK STRONY
-  // Funkcja pomocnicza ustalająca tytuł i opis w zależności od aktywnej ścieżki routingu.
+  // NAGŁÓWEK
   const getPageHeader = () => {
     if (location.pathname.startsWith("/project/")) {
       const currentProject = projects.find((p) => p.id === id);
@@ -81,7 +66,6 @@ export function DashboardLayout() {
   return (
     <Flex minH="100vh" bg="mainBg">
       {/* SEKCJA 1: PASEK BOCZNY (SIDEBAR) */}
-      {/* Element pozycjonowany jako 'sticky', zapewniający stały dostęp do nawigacji. */}
       <Box
         as="nav"
         width="280px"
@@ -95,11 +79,61 @@ export function DashboardLayout() {
         top="0"
         h="100vh"
       >
-        {/* LOGO MARKI */}
+        {/* LOGO MARKI (Z EFEKTEM 3D I ANIMACJĄ) */}
         <Flex justify="center" mb="6">
-          <Text fontFamily={"archivo black"} fontSize="4xl" color="blue.500">
-            Bugly
-          </Text>
+          <style>
+            {`
+              @keyframes gradientMove {
+                0% { background-position: 0% 50%; }
+                100% { background-position: 200% 50%; }
+              }
+            `}
+          </style>
+
+          <Box position="relative" display="inline-block">
+            {/* PASEK PRZEKREŚLAJĄCY (Warstwa środkowa - zIndex 5) */}
+            <Box
+              position="absolute"
+              top="50%"
+              left="-5%"
+              width="110%"
+              height="6px" // Mniejsza grubość dla mniejszego logo
+              borderRadius="full"
+              pointerEvents="none"
+              zIndex="5"
+              boxShadow="0 0 10px rgba(0,0,0,0.2)"
+              transform="translateY(-50%) rotate(-3deg)"
+              opacity="0.9"
+              style={{
+                background: "linear-gradient(90deg, #3182ce, #e53e3e, #3182ce)",
+                backgroundSize: "200% auto",
+                animation: "gradientMove 3s linear infinite",
+              }}
+            />
+
+            {/* TEKST (Rozbity na warstwy) */}
+            <Text
+              fontFamily={"archivo black"}
+              fontSize="4xl"
+              color="blue.500"
+              position="relative"
+            >
+              {/* Warstwa spodnia (pod paskiem) */}
+              <Box as="span" position="relative" zIndex="10">
+                Bug
+              </Box>
+
+              {/* Warstwa wierzchnia (NAD PASKIEM) */}
+              <Box as="span" position="relative" zIndex="1">
+                l
+              </Box>
+
+              {/* Warstwa spodnia (pod paskiem) */}
+              <Box as="span" position="relative" zIndex="10">
+                y
+              </Box>
+            </Text>
+          </Box>
         </Flex>
 
         {/* GŁÓWNA NAWIGACJA */}
@@ -114,7 +148,6 @@ export function DashboardLayout() {
         </Stack>
 
         {/* SEKCJA OSTATNICH PROJEKTÓW */}
-        {/* Wyświetla listę dynamicznie generowaną na podstawie historii użytkownika */}
         <Box mb="6" overflow="hidden">
           <Flex align="center" justify="space-between" mb="3" px="3">
             <Text
@@ -144,7 +177,6 @@ export function DashboardLayout() {
                 />
               ))
             ) : (
-              // Stan pusty dla historii
               <Text px="3" fontSize="xs" color="gray.400" fontStyle="italic">
                 No recent projects visited
               </Text>
@@ -153,16 +185,20 @@ export function DashboardLayout() {
         </Box>
 
         <Spacer />
-        {/* AKCJE STOPKI (WYLOGOWANIE) */}
+        {/* AKCJE STOPKI */}
         <NavItem
           icon={<LuLogOut />}
           label="Log out"
           color="red.500"
-          onClick={() => navigate("/auth")}
+          onClick={() => {
+            // Opcjonalnie: Tutaj możesz dodać czyszczenie tokena
+            localStorage.removeItem("token");
+            navigate("/auth");
+          }}
         />
       </Box>
 
-      {/* SEKCJA 2: GŁÓWNY OBSZAR ROBOCZY (CONTENT AREA) */}
+      {/* SEKCJA 2: GŁÓWNY OBSZAR ROBOCZY */}
       <Box flex="1" p="10" display="flex" flexDirection="column" h="100vh">
         <Stack gap="6" flex="1">
           {/* NAGŁÓWEK WIDOKU */}
@@ -175,8 +211,7 @@ export function DashboardLayout() {
             </Text>
           </Box>
 
-          {/* KONTENER TREŚCI (OUTLET) */}
-          {/* Renderuje odpowiedni komponent podstrony (Home, ProjectDetails itp.) */}
+          {/* KONTENER TREŚCI */}
           <Box
             flex="1"
             borderRadius="md"
@@ -186,7 +221,7 @@ export function DashboardLayout() {
             display="flex"
             flexDirection="column"
             p="10"
-            overflow="hidden" // Kluczowe dla niezależnego scrollowania wewnątrz widoków (np. Home Grid)
+            overflow="hidden"
           >
             <Outlet />
           </Box>
@@ -196,8 +231,7 @@ export function DashboardLayout() {
   );
 }
 
-// KOMPONENT POMOCNICZY: ELEMENT NAWIGACJI
-// Obsługuje stany aktywne i hover dla linków w pasku bocznym.
+// KOMPONENTY POMOCNICZE
 function NavItem({ icon, label, active, color, onClick }: any) {
   return (
     <Link
@@ -230,8 +264,6 @@ function NavItem({ icon, label, active, color, onClick }: any) {
   );
 }
 
-// KOMPONENT POMOCNICZY: LINK PROJEKTU
-// Dedykowany komponent dla listy projektów, zawierający wskaźnik koloru (kropka).
 function ProjectLink({ label, color, id, isActive }: any) {
   const navigate = useNavigate();
 

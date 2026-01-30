@@ -5,20 +5,17 @@ import axios from "axios";
 import { Box, Button, Center, Heading, Input, Stack } from "@chakra-ui/react";
 import { Field } from "@/components/ui/field";
 import { toaster } from "@/components/ui/toaster";
+// Import kontekstu do odświeżania danych
+import { useProjects } from "../../context/ProjectContext";
 
-// KOMPONENT LOGOWANIA (AUTHENTICATION)
-// Główny punkt wejścia do chronionej części aplikacji.
-// Odpowiada za weryfikację tożsamości użytkownika i inicjalizację sesji.
 export function Auth() {
-  // 1. LOKALNY STAN FORMULARZA
-  // Przechowuje dane uwierzytelniające wpisywane przez użytkownika.
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  // 2. OBSŁUGA KOMUNIKACJI Z API (TANSTACK QUERY)
-  // Wykorzystanie hooka useMutation do obsługi asynchronicznego zapytania POST.
-  // Automatycznie zarządza stanami: isPending (ładowanie), isError, isSuccess.
+  // Pobieramy funkcję do odświeżania danych
+  const { refreshData } = useProjects();
+
   const loginMutation = useMutation({
     mutationFn: async () => {
       const apiUrl =
@@ -29,30 +26,20 @@ export function Auth() {
       });
       return response.data;
     },
-    // SCENARIUSZ POZYTYWNY (SUCCESS FLOW)
-    onSuccess: (data) => {
-      // UX: Czyścimy poprzednie komunikaty, aby nie zasłaniały widoku
+    onSuccess: async (data) => {
       toaster.dismiss();
-
-      // SECURITY: Zapisujemy token JWT (JSON Web Token) w localStorage.
-      // Pozwoli to na autoryzację kolejnych zapytań do API w ramach sesji.
       localStorage.setItem("token", data.token);
+      toaster.create({ title: "Zalogowano pomyślnie", type: "success" });
 
-      toaster.create({
-        title: "Zalogowano pomyślnie",
-        type: "success",
-      });
+      // KLUCZOWE: Czekamy na pobranie projektów przed zmianą strony
+      await refreshData();
 
-      // Przekierowanie do głównego dashboardu aplikacji
       navigate("/home");
     },
-    // SCENARIUSZ NEGATYWNY (ERROR FLOW)
     onError: (error: any) => {
       const errorMessage =
         error.response?.data?.error || "Błąd połączenia z serwerem";
-
       toaster.dismiss();
-
       toaster.create({
         title: "Błąd logowania",
         description: errorMessage,
@@ -61,8 +48,6 @@ export function Auth() {
     },
   });
 
-  // HELPER: OBSŁUGA WYSYŁKI FORMULARZA
-  // Zapobiega wielokrotnemu wysłaniu żądania, gdy poprzednie jest w toku.
   const handleLogin = () => {
     if (!loginMutation.isPending) {
       loginMutation.mutate();
@@ -70,21 +55,70 @@ export function Auth() {
   };
 
   return (
-    // 3. WARSTWA PREZENTACJI (UI)
-    // Centrowany layout z brandingiem aplikacji i responsywnym formularzem.
     <Box minH="100vh" bg="mainBg" display="flex" flexDirection="column">
+      {/* 1. Definicja animacji - wstawiamy globalnie dla tego komponentu */}
+      <style>
+        {`
+          @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+          }
+        `}
+      </style>
+
       <Center flex="1" p={4}>
         <Stack gap="8" width="full" maxW="400px">
-          {/* SEKCJA BRANDINGU */}
           <Stack gap="2" textAlign="center">
-            <Heading
-              size="6xl"
-              fontFamily={"archivo black"}
-              letterSpacing="tight"
-              color="blue.500"
-            >
-              Bugly
-            </Heading>
+            {/* KONTENER LOGO */}
+            <Box position="relative" display="inline-block" alignSelf="center">
+              {/* PASEK (Warstwa środkowa - zIndex 5) */}
+              {/* Znajduje się NAD 'Bug' i 'y', ale POD 'l' */}
+              <Box
+                position="absolute"
+                top="50%"
+                left="-5%"
+                width="110%"
+                height="8px"
+                borderRadius="full"
+                pointerEvents="none"
+                zIndex="5"
+                boxShadow="0 0 10px rgba(0,0,0,0.2)"
+                transform="translateY(-50%) rotate(-3deg)"
+                opacity="0.9"
+                // Używamy natywnego style={{}} dla pewności animacji
+                style={{
+                  background:
+                    "linear-gradient(90deg, #3182ce, #e53e3e, #3182ce)", // Niebieski -> Czerwony -> Niebieski
+                  backgroundSize: "200% auto",
+                  animation: "gradientMove 1s linear infinite",
+                }}
+              />
+
+              {/* TEKST (Rozbity na warstwy) */}
+              <Heading
+                size="6xl"
+                fontFamily={"archivo black"}
+                letterSpacing="tight"
+                color="blue.500"
+                position="relative"
+                // Usuwamy ogólny zIndex, bo teraz zarządzają nim litery
+              >
+                {/* Warstwa spodnia (pod paskiem) */}
+                <Box as="span" position="relative" zIndex="10">
+                  Bug
+                </Box>
+
+                {/* Warstwa wierzchnia (NAD PASKIEM) */}
+                <Box as="span" position="relative" zIndex="1">
+                  l
+                </Box>
+
+                {/* Warstwa spodnia (pod paskiem) */}
+                <Box as="span" position="relative" zIndex="10">
+                  y
+                </Box>
+              </Heading>
+            </Box>
           </Stack>
 
           {/* KONTENER FORMULARZA */}
@@ -121,7 +155,6 @@ export function Auth() {
                   h="12"
                   disabled={loginMutation.isPending}
                   bg={{ _light: "gray.100", _dark: "black" }}
-                  // UX Improvement: Pozwala na zatwierdzenie enterem
                   onKeyDown={(e) => e.key === "Enter" && handleLogin()}
                 />
               </Field>
@@ -141,7 +174,6 @@ export function Auth() {
                 h="12"
                 fontWeight="medium"
                 borderRadius="xl"
-                // Walidacja: Przycisk nieaktywny, jeśli pola są puste
                 disabled={!email || !password}
               >
                 Kontynuuj
